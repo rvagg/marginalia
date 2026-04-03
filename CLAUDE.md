@@ -77,8 +77,15 @@ claude --dangerously-load-development-channels server:marginalia
 
 ### Environment variables
 
-- `MARGINALIA_PORT` - HTTP port (default: `3456`, use `0` for OS-assigned)
-- `MARGINALIA_HOST` - Listen address (default: `127.0.0.1`, use `0.0.0.0` for remote access)
+- `MARGINALIA_PORT` - Default port (default: `0` = random, set a number for fixed port)
+- `MARGINALIA_HOST` - Default listen address (default: `127.0.0.1`, use `0.0.0.0` for remote access)
+- `MARGINALIA_AUTO_START` - Set to `1` to start the server automatically on the session's working directory. Off by default.
+
+### Startup modes
+
+**On-demand (default):** The MCP server connects but stays idle. The user asks the agent to start, e.g. "start marginalia on src/myproject/". The agent calls the `start` tool, gets a URL, and reports it. All `start` parameters are optional; the agent should only set what the user explicitly provides.
+
+**Auto-start:** Set `MARGINALIA_AUTO_START=1` to start immediately on the session's cwd. Useful for single-repo sessions and Docker containers.
 
 ### Docker
 
@@ -86,8 +93,8 @@ The `~/bin/claude-docker/` setup supports marginalia:
 - `run.sh` mounts `~/git/marginalia` read-only at `/marginalia`
 - `docker-entrypoint.sh` copies to `/tmp/marginalia`, installs deps, writes MCP config
 - `claude-wrapper.sh` adds `--dangerously-load-development-channels` when marginalia is present
+- Container sets `MARGINALIA_AUTO_START=1`, `MARGINALIA_HOST=0.0.0.0` by default
 - Set `MARGINALIA_PORT=3456` env var to map the port out of the container
-- Container defaults `MARGINALIA_HOST=0.0.0.0` since port mapping requires it
 
 ### Permission auto-approve
 
@@ -96,7 +103,7 @@ To avoid approve/deny prompts for marginalia's own tools:
 ```json
 {
   "permissions": {
-    "allow": ["mcp__marginalia__reply", "mcp__marginalia__get_url"]
+    "allow": ["mcp__marginalia__start", "mcp__marginalia__stop", "mcp__marginalia__reply", "mcp__marginalia__get_url"]
   }
 }
 ```
@@ -105,8 +112,10 @@ Add to `.claude/settings.local.json` in the project you're reviewing.
 
 ## MCP tools
 
+- **`start`** - Start the review server. Optional params: `dir` (directory to watch), `port`, `host`. All default from env vars or sensible defaults. The agent should only set params the user explicitly asks for.
+- **`stop`** - Stop the review server.
 - **`reply`** - Reply to a comment thread. Params: `thread_id`, `text` (markdown), `ephemeral` (boolean). Ephemeral replies show as transient status, replaced by next non-ephemeral reply.
-- **`get_url`** - Returns the server URL. Useful when using random port (`MARGINALIA_PORT=0`).
+- **`get_url`** - Returns the server URL if running.
 
 ## Instructions to Claude
 

@@ -47,18 +47,31 @@ claude --dangerously-load-development-channels server:marginalia
 
 Open `http://localhost:3456` in your browser.
 
+## Usage
+
+By default, marginalia starts idle. Ask the agent to start it:
+
+> "start marginalia on src/myproject/"
+
+> "start marginalia on 0.0.0.0"
+
+> "start marginalia"
+
+The agent calls the `start` tool, picks a port, and gives you the URL. Only parameters you mention are set; everything else uses defaults.
+
 ## Environment variables
 
 | Variable | Default | Description |
 |---|---|---|
-| `MARGINALIA_PORT` | `3456` | HTTP server port |
-| `MARGINALIA_HOST` | `127.0.0.1` | Listen address (use `0.0.0.0` for remote access) |
+| `MARGINALIA_PORT` | `0` (random) | Default HTTP server port |
+| `MARGINALIA_HOST` | `127.0.0.1` | Default listen address (use `0.0.0.0` for remote access) |
+| `MARGINALIA_AUTO_START` | off | Set to `1` to start the server automatically on the session's working directory |
 
 ## Multiple sessions
 
-When running multiple Claude Code instances, each spawns its own marginalia server. If the default port is in use, marginalia automatically tries the next port (up to 10 attempts). Ask the agent "what's your marginalia URL?" and it will call `get_url` to tell you the actual port.
+Each Claude Code instance has its own marginalia server. With the default random port, there are no collisions. Ask "what's your marginalia URL?" and the agent will tell you.
 
-To assign fixed ports per session, set `MARGINALIA_PORT` in each instance's MCP config.
+To assign fixed ports, set `MARGINALIA_PORT`. If the port is in use, marginalia tries the next port (up to 10 attempts).
 
 ## Features
 
