@@ -1,0 +1,104 @@
+/* diff2html overrides for marginalia
+   All the !important rules that fight diff2html's defaults live here.
+   Uses CSS variables from style.css (:root). */
+
+/* --- Container --- */
+
+.d2h-wrapper { background: var(--mg-bg) !important; }
+
+/* --- File cards --- */
+
+.d2h-file-wrapper {
+  border: 1px solid var(--mg-border) !important;
+  border-radius: 6px !important;
+  margin: 16px 16px 0 16px !important;
+  overflow: visible !important;
+}
+
+.d2h-file-header {
+  background: var(--mg-surface) !important;
+  border-bottom: 1px solid var(--mg-border) !important;
+  padding: 8px 12px !important;
+  height: auto !important;
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 2 !important;
+}
+
+.d2h-file-name-wrapper { background: transparent !important; font-size: 13px !important; }
+.d2h-file-name { color: var(--mg-text) !important; font-family: var(--mg-mono) !important; font-size: 12px !important; }
+.d2h-file-stats { font-size: 12px !important; }
+.d2h-file-collapse { display: none !important; }
+.d2h-file-diff { border: none !important; overflow-x: hidden !important; overflow-y: hidden !important; }
+
+/* --- Table --- */
+
+.d2h-diff-table {
+  font-family: var(--mg-mono) !important;
+  font-size: 12px !important;
+  border-collapse: collapse !important;
+  width: 100% !important;
+}
+
+/* --- Line numbers: static table-cell instead of absolute --- */
+
+.d2h-code-linenumber {
+  position: static !important;
+  display: table-cell !important;
+  width: 1% !important;
+  min-width: 50px !important;
+  white-space: nowrap !important;
+  vertical-align: top !important;
+  cursor: pointer !important;
+  color: rgba(31, 35, 40, 0.38) !important;
+  border-right: 1px solid var(--mg-border) !important;
+}
+
+/* --- Code line --- */
+
+.d2h-code-line { padding: 0 !important; width: 100% !important; }
+.d2h-code-line-prefix { padding: 0 4px 0 6px !important; vertical-align: top !important; }
+.d2h-code-line-ctn { font-family: var(--mg-mono) !important; font-size: 12px !important; padding-left: 2px !important; white-space: pre-wrap !important; word-wrap: break-word !important; }
+
+/* --- Row colours: GitHub-matching del/ins/info --- */
+
+/* Deletions: soft red */
+.d2h-del { background: #ffebe9 !important; border-color: transparent !important; }
+.d2h-del .d2h-code-linenumber { background: #ffd7d5 !important; color: rgba(31, 35, 40, 0.38) !important; }
+.d2h-del .d2h-code-line, .d2h-del .d2h-code-line-ctn { background: #ffebe9 !important; }
+
+/* Insertions: soft green */
+.d2h-ins { background: #e6ffec !important; border-color: transparent !important; }
+.d2h-ins .d2h-code-linenumber { background: #ccffd8 !important; color: rgba(31, 35, 40, 0.38) !important; }
+.d2h-ins .d2h-code-line, .d2h-ins .d2h-code-line-ctn { background: #e6ffec !important; }
+
+/* Character-level highlights within changed lines */
+.d2h-del del, .d2h-code-line-ctn del {
+  background: #ff818266 !important;
+  text-decoration: none !important;
+  border-radius: 2px;
+}
+
+.d2h-ins ins, .d2h-code-line-ctn ins {
+  background: #46c75666 !important;
+  text-decoration: none !important;
+  border-radius: 2px;
+}
+
+/* Context/unchanged lines */
+.d2h-code-linenumber { background: var(--mg-bg) !important; }
+
+/* Hunk headers */
+.d2h-info { background: #ddf4ff !important; border-color: transparent !important; }
+.d2h-info .d2h-code-linenumber { background: #ddf4ff !important; }
+.d2h-info .d2h-code-line, .d2h-info .d2h-code-line-ctn { background: #ddf4ff !important; color: rgba(31, 35, 40, 0.7) !important; }
+
+/* --- Tags --- */
+
+.d2h-tag { background: var(--mg-bg) !important; }
+
+/* --- Viewed / collapsed --- */
+
+.d2h-file-wrapper.mg-collapsed .d2h-file-diff { display: none !important; }
+.d2h-file-wrapper.mg-collapsed { opacity: 0.7; }
+.d2h-file-wrapper.mg-collapsed .d2h-file-header { border-bottom: none !important; }

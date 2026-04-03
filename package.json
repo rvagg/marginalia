@@ -1,0 +1,27 @@
+{
+  "name": "@rvagg/marginalia",
+  "version": "0.0.1",
+  "description": "Live code review UI for Claude Code, annotate diffs, converse with your AI agent",
+  "type": "module",
+  "bin": "./dist/server.js",
+  "scripts": {
+    "start": "node dist/server.js",
+    "build": "tsc",
+    "dev": "node --watch dist/server.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.28.0",
+    "ws": "^8.20.0",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "@types/ws": "^8.18.1",
+    "typescript": "^5.9.3"
+  },
+  "engines": {
+    "node": ">=24"
+  },
+  "author": "Rod Vagg <rod@vagg.org>",
+  "license": "Apache-2.0"
+}
