@@ -46,18 +46,30 @@
   position: static !important;
   display: table-cell !important;
   width: 1% !important;
-  min-width: 50px !important;
   white-space: nowrap !important;
   vertical-align: top !important;
   cursor: pointer !important;
   color: rgba(31, 35, 40, 0.38) !important;
   border-right: 1px solid var(--mg-border) !important;
+  padding: 0 4px !important;
+  font-size: 0 !important;
+}
+
+.line-num1, .line-num2 {
+  display: inline-block !important;
+  min-width: 4ch !important;
+  width: 4ch !important;
+  text-align: right !important;
+  float: none !important;
+  font-size: 12px !important;
+  line-height: 20px !important;
+  padding: 0 2px !important;
 }
 
 /* --- Code line --- */
 
 .d2h-code-line { padding: 0 !important; width: 100% !important; }
-.d2h-code-line-prefix { padding: 0 4px 0 6px !important; vertical-align: top !important; }
+.d2h-code-line-prefix { padding: 0 4px 0 16px !important; vertical-align: top !important; }
 .d2h-code-line-ctn { font-family: var(--mg-mono) !important; font-size: 12px !important; padding-left: 2px !important; white-space: pre-wrap !important; word-wrap: break-word !important; }
 
 /* --- Row colours: GitHub-matching del/ins/info --- */

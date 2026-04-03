@@ -3,11 +3,17 @@
   "version": "0.0.1",
   "description": "Live code review UI for Claude Code, annotate diffs, converse with your AI agent",
   "type": "module",
-  "bin": "./dist/server.js",
+  "bin": {
+    "marginalia": "./dist/server.js"
+  },
+  "files": [
+    "dist",
+    "ui"
+  ],
   "scripts": {
     "start": "node dist/server.js",
     "build": "tsc",
-    "dev": "node --watch dist/server.js"
+    "prepublishOnly": "npm run build"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.28.0",

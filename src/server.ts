@@ -53,6 +53,31 @@ async function pollDiff(): Promise<void> {
   }
 }
 
+// Try to listen on a port, incrementing if in use
+
+const MAX_PORT_ATTEMPTS = 10
+
+function tryListen(port: number, attempt: number): void {
+  httpServer.once('error', (err: NodeJS.ErrnoException) => {
+    if (err.code === 'EADDRINUSE' && attempt < MAX_PORT_ATTEMPTS) {
+      process.stderr.write(`marginalia: port ${port} in use, trying ${port + 1}\n`)
+      tryListen(port + 1, attempt + 1)
+    } else {
+      process.stderr.write(`marginalia: fatal: ${err.message}\n`)
+      process.exit(1)
+    }
+  })
+
+  httpServer.listen(port, HOST, () => {
+    const addr = httpServer.address()
+    const boundPort = typeof addr === 'object' && addr ? addr.port : port
+    const boundHost = typeof addr === 'object' && addr ? addr.address : HOST
+    serverUrl = `http://${boundHost}:${boundPort}`
+    process.stderr.write(`marginalia: ${serverUrl}\n`)
+    process.stderr.write(`marginalia: watching ${PROJECT_DIR}\n`)
+  })
+}
+
 // Start
 
 async function main(): Promise<void> {
@@ -62,14 +87,7 @@ async function main(): Promise<void> {
 
   setInterval(pollDiff, 500)
 
-  httpServer.listen(PORT, HOST, () => {
-    const addr = httpServer.address()
-    const boundPort = typeof addr === 'object' && addr ? addr.port : PORT
-    const boundHost = typeof addr === 'object' && addr ? addr.address : HOST
-    serverUrl = `http://${boundHost}:${boundPort}`
-    process.stderr.write(`marginalia: ${serverUrl}\n`)
-    process.stderr.write(`marginalia: watching ${PROJECT_DIR}\n`)
-  })
+  tryListen(PORT, 1)
 }
 
 main().catch((err) => {
