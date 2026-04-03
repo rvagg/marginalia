@@ -37,6 +37,7 @@
   font-family: var(--mg-mono) !important;
   font-size: 12px !important;
   border-collapse: collapse !important;
+  border-spacing: 0 !important;
   width: 100% !important;
 }
 
@@ -49,7 +50,7 @@
   white-space: nowrap !important;
   vertical-align: top !important;
   cursor: pointer !important;
-  color: rgba(31, 35, 40, 0.38) !important;
+  color: var(--mg-text-muted) !important;
   border-right: 1px solid var(--mg-border) !important;
   padding: 0 4px !important;
   font-size: 0 !important;
@@ -62,7 +63,7 @@
   text-align: right !important;
   float: none !important;
   font-size: 12px !important;
-  line-height: 20px !important;
+  line-height: 18px !important;
   padding: 0 2px !important;
 }
 
@@ -70,17 +71,17 @@
 
 .d2h-code-line { padding: 0 !important; width: 100% !important; }
 .d2h-code-line-prefix { padding: 0 4px 0 16px !important; vertical-align: top !important; }
-.d2h-code-line-ctn { font-family: var(--mg-mono) !important; font-size: 12px !important; padding-left: 2px !important; white-space: pre-wrap !important; word-wrap: break-word !important; }
+.d2h-code-line-ctn { font-family: var(--mg-mono) !important; font-size: 12px !important; padding: 1px 2px !important; white-space: pre-wrap !important; word-wrap: break-word !important; }
 
 /* --- Row colours: GitHub-matching del/ins/info --- */
 
 /* Deletions: soft red */
-.d2h-del { background: #ffebe9 !important; border-color: transparent !important; }
+.d2h-del { background: #ffebe9 !important; }
 .d2h-del .d2h-code-linenumber { background: #ffd7d5 !important; color: rgba(31, 35, 40, 0.38) !important; }
 .d2h-del .d2h-code-line, .d2h-del .d2h-code-line-ctn { background: #ffebe9 !important; }
 
 /* Insertions: soft green */
-.d2h-ins { background: #e6ffec !important; border-color: transparent !important; }
+.d2h-ins { background: #e6ffec !important; }
 .d2h-ins .d2h-code-linenumber { background: #ccffd8 !important; color: rgba(31, 35, 40, 0.38) !important; }
 .d2h-ins .d2h-code-line, .d2h-ins .d2h-code-line-ctn { background: #e6ffec !important; }
 
@@ -101,13 +102,30 @@
 .d2h-code-linenumber { background: var(--mg-bg) !important; }
 
 /* Hunk headers */
-.d2h-info { background: #ddf4ff !important; border-color: transparent !important; }
+.d2h-info { background: #ddf4ff !important; }
 .d2h-info .d2h-code-linenumber { background: #ddf4ff !important; }
 .d2h-info .d2h-code-line, .d2h-info .d2h-code-line-ctn { background: #ddf4ff !important; color: rgba(31, 35, 40, 0.7) !important; }
 
 /* --- Tags --- */
 
 .d2h-tag { background: var(--mg-bg) !important; }
+
+/* --- Dark mode diff colours --- */
+
+[data-theme="dark"] .d2h-del { background: rgba(248, 81, 73, 0.1) !important; }
+[data-theme="dark"] .d2h-del .d2h-code-linenumber { background: rgba(248, 81, 73, 0.15) !important; color: var(--mg-text-muted) !important; }
+[data-theme="dark"] .d2h-del .d2h-code-line, [data-theme="dark"] .d2h-del .d2h-code-line-ctn { background: rgba(248, 81, 73, 0.1) !important; }
+
+[data-theme="dark"] .d2h-ins { background: rgba(46, 160, 67, 0.15) !important; }
+[data-theme="dark"] .d2h-ins .d2h-code-linenumber { background: rgba(46, 160, 67, 0.2) !important; color: var(--mg-text-muted) !important; }
+[data-theme="dark"] .d2h-ins .d2h-code-line, [data-theme="dark"] .d2h-ins .d2h-code-line-ctn { background: rgba(46, 160, 67, 0.15) !important; }
+
+[data-theme="dark"] .d2h-del del, [data-theme="dark"] .d2h-code-line-ctn del { background: rgba(248, 81, 73, 0.4) !important; }
+[data-theme="dark"] .d2h-ins ins, [data-theme="dark"] .d2h-code-line-ctn ins { background: rgba(46, 160, 67, 0.4) !important; }
+
+[data-theme="dark"] .d2h-info { background: rgba(56, 139, 253, 0.1) !important; }
+[data-theme="dark"] .d2h-info .d2h-code-linenumber { background: rgba(56, 139, 253, 0.1) !important; }
+[data-theme="dark"] .d2h-info .d2h-code-line, [data-theme="dark"] .d2h-info .d2h-code-line-ctn { background: rgba(56, 139, 253, 0.1) !important; color: var(--mg-text-muted) !important; }
 
 /* --- Viewed / collapsed --- */
 
