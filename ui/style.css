@@ -188,8 +188,8 @@ body { display: flex; flex-direction: column; }
 
 .comment-message { padding: 2px 0; line-height: 1.3; font-size: 13px; }
 .comment-message + .comment-message { margin-top: 3px; padding-top: 4px; border-top: 1px solid var(--mg-border-light); }
-.comment-user strong { color: var(--mg-comment-user); font-size: 12px; }
-.comment-assistant strong { color: var(--mg-comment-assistant); font-size: 12px; }
+.comment-user > strong { color: var(--mg-comment-user); font-size: 12px; }
+.comment-assistant > strong { color: var(--mg-comment-assistant); font-size: 12px; }
 .comment-dismiss {
   float: right;
   background: none; border: none; cursor: pointer;
@@ -206,18 +206,19 @@ body { display: flex; flex-direction: column; }
 
 
 
-.comment-message span { white-space: pre-wrap; }
-.comment-message span p { margin: 0 0 0.25em 0; }
-.comment-message span p:last-child { margin-bottom: 0; }
-.comment-message span ul, .comment-message span ol { padding-left: 1.5em; margin: 0.2em 0; line-height: 1.3; }
-.comment-message span li { margin: 0; padding: 0; }
-.comment-message span li p { margin: 0; }
-.comment-message span code { background: var(--mg-surface); padding: 1px 4px; border-radius: 3px; font-family: var(--mg-mono); font-size: 13px; }
-.comment-message span pre { background: var(--mg-surface); padding: 6px 8px; border-radius: 4px; overflow-x: auto; margin: 4px 0; }
-.comment-message span pre code { background: none; padding: 0; }
+/* Shared markdown content styles */
 
-.comment-ephemeral { opacity: 0.6; font-style: italic; }
-.chat-ephemeral { opacity: 0.6; font-style: italic; }
+.mg-md { white-space: normal; line-height: 1.3; color: var(--mg-text) !important; }
+.mg-md strong { color: var(--mg-text); }
+.mg-md p { margin: 0.1em 0; }
+.mg-md ul, .mg-md ol { padding-left: 1.4em; margin: 0; line-height: 1.2; }
+.mg-md li { margin: 0; padding: 0; }
+.mg-md li > p { margin: 0; display: inline; }
+.mg-md code { background: var(--mg-surface); padding: 1px 3px; border-radius: 3px; font-family: var(--mg-mono); font-size: 13px; }
+.mg-md pre { background: var(--mg-surface); padding: 4px 6px; border-radius: 4px; overflow-x: auto; margin: 2px 0; line-height: 1.2; }
+.mg-md pre code { background: none; padding: 0; }
+
+.comment-ephemeral, .chat-ephemeral { opacity: 0.6; font-style: italic; }
 
 /* --- Permission bar --- */
 
@@ -257,9 +258,9 @@ body { display: flex; flex-direction: column; }
 #chat-history { max-height: 200px; overflow-y: auto; padding: 8px 16px; border-top: 1px solid var(--mg-border); }
 #chat-history.hidden { display: none; }
 
-.chat-message { padding: 3px 0; line-height: 1.5; font-size: 13px; }
-.chat-you strong { color: var(--mg-comment-user); }
-.chat-claude strong { color: var(--mg-comment-assistant); }
+.chat-message { padding: 3px 0; line-height: 1.3; font-size: 13px; }
+.chat-you > strong { color: var(--mg-comment-user); }
+.chat-claude > strong { color: var(--mg-comment-assistant); }
 
 /* --- Buttons --- */
 

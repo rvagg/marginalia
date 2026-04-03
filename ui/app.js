@@ -451,7 +451,7 @@
     const ephClass = m.ephemeral ? ' comment-ephemeral' : ''
     return `<div class="comment-message comment-${m.from}${ephClass}">` +
       `<strong>${m.from === 'user' ? 'you' : 'claude'}</strong> ` +
-      `<span>${content}</span></div>`
+      `<span class="mg-md">${content}</span></div>`
   }
 
   function renderThreadEl(thread) {
@@ -576,8 +576,8 @@
     }
     const div = document.createElement('div')
     div.className = 'chat-message chat-' + from + (ephemeral ? ' chat-ephemeral' : '')
-    const content = renderMarkdownInline(text)
-    div.innerHTML = `<strong>${escapeHtml(from)}</strong> ${content}`
+    const content = renderMarkdown(text)
+    div.innerHTML = `<strong>${escapeHtml(from)}</strong> <span class="mg-md">${content}</span>`
     chatHistory.appendChild(div)
     while (chatHistory.children.length > MAX_CHAT_MESSAGES) {
       chatHistory.removeChild(chatHistory.firstChild)
