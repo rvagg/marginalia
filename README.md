@@ -47,6 +47,47 @@ claude --dangerously-load-development-channels server:marginalia
 
 Open `http://localhost:3456` in your browser.
 
+## Codex
+
+Marginalia can also be launched as a Codex MCP server. Codex does not currently support Claude Code's `claude/channel` notification extension, so browser comments are queued and must be drained with the `poll_comments` tool or the `/api/pending-comments` HTTP endpoint. The review UI, live diff updates, and MCP tools still work.
+
+Add Marginalia to `~/.codex/config.toml`:
+
+```toml
+[mcp_servers.marginalia]
+command = "marginalia"
+
+[mcp_servers.marginalia.env]
+MARGINALIA_HOST = "0.0.0.0"
+MARGINALIA_PORT = "3456"
+```
+
+Or, from a local checkout:
+
+```toml
+[mcp_servers.marginalia]
+command = "node"
+args = ["/path/to/marginalia/dist/server.js"]
+
+[mcp_servers.marginalia.env]
+MARGINALIA_HOST = "0.0.0.0"
+MARGINALIA_PORT = "3456"
+```
+
+In Codex, ask:
+
+> "start marginalia"
+
+Codex calls the `start` tool and reports the URL. When using `MARGINALIA_HOST=0.0.0.0`, open `http://127.0.0.1:3456` locally; `0.0.0.0` is the listen address, not the browser address.
+
+If Codex is sandboxing local commands, allow the MCP launch command so Marginalia can bind its HTTP/WebSocket port. This rule goes in `~/.codex/rules/default.rules`, not `~/.codex/config.toml`. For the local checkout example above, add:
+
+```rules
+prefix_rule(pattern=["node", "/path/to/marginalia/dist/server.js"], decision="allow")
+```
+
+To read queued browser comments, ask Codex to call `poll_comments`. Codex does not currently have a Claude-style background `/loop`, so polling is manual unless you configure Codex hooks or another external trigger.
+
 ## Usage
 
 By default, marginalia starts idle. Ask the agent to start it:
