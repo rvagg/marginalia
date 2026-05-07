@@ -29,7 +29,7 @@
 .d2h-file-name { color: var(--mg-text) !important; font-family: var(--mg-mono) !important; font-size: 12px !important; }
 .d2h-file-stats { font-size: 12px !important; }
 .d2h-file-collapse { display: none !important; }
-.d2h-file-diff { border: none !important; overflow-x: hidden !important; overflow-y: hidden !important; }
+.d2h-file-diff { border: none !important; overflow: hidden !important; }
 
 /* --- Table --- */
 
@@ -69,9 +69,9 @@
 
 /* --- Code line --- */
 
-.d2h-code-line { padding: 0 !important; width: 100% !important; }
+.d2h-code-line { padding: 0 !important; width: calc(100% - 32px) !important; }
 .d2h-code-line-prefix { padding: 0 4px 0 16px !important; vertical-align: top !important; }
-.d2h-code-line-ctn { font-family: var(--mg-mono) !important; font-size: 12px !important; padding: 1px 2px !important; white-space: pre-wrap !important; word-wrap: break-word !important; }
+.d2h-code-line-ctn { font-family: var(--mg-mono) !important; font-size: 12px !important; padding: 1px 4px 1px 2px !important; white-space: pre-wrap !important; word-wrap: break-word !important; overflow-wrap: break-word !important; }
 
 /* --- Row colours: GitHub-matching del/ins/info --- */
 

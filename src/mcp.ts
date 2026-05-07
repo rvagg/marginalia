@@ -3,6 +3,8 @@ import {
   ListToolsRequestSchema,
   CallToolRequestSchema
 } from '@modelcontextprotocol/sdk/types.js'
+import { readFile } from 'node:fs/promises'
+import { join } from 'node:path'
 import { z } from 'zod'
 
 export type BroadcastFn = (msg: Record<string, unknown>) => void
@@ -10,14 +12,52 @@ export type BroadcastFn = (msg: Record<string, unknown>) => void
 interface McpOptions {
   broadcast: BroadcastFn
   getUrl: () => string
+  getProjectDir: () => string
+  drainPendingComments: () => string
   version: string
   startServer: (opts?: { dir?: string; port?: number; host?: string }) => Promise<string>
   stopServer: () => Promise<void>
   isRunning: () => boolean
 }
 
+// Tool argument schemas
+
+const StartArgs = z.object({
+  dir: z.string().optional(),
+  port: z.number().optional(),
+  host: z.string().optional()
+}).strict()
+
+const ReplyArgs = z.object({
+  thread_id: z.string(),
+  text: z.string().optional(),
+  body: z.string().optional(),
+  ephemeral: z.boolean().optional()
+}).strict().refine(
+  d => d.text || d.body,
+  { message: 'reply requires "text" (or "body") parameter' }
+).transform(d => ({
+  thread_id: d.thread_id,
+  text: (d.text ?? d.body)!,
+  ephemeral: d.ephemeral ?? false
+}))
+
+const ShowContextArgs = z.object({
+  file: z.string(),
+  startLine: z.number(),
+  endLine: z.number(),
+  label: z.string().optional()
+}).strict()
+
+function parseArgs<T>(schema: z.ZodType<T>, args: unknown): { ok: true; data: T } | { ok: false; error: string } {
+  const result = schema.safeParse(args)
+  if (result.success) return { ok: true, data: result.data }
+  const issues = result.error.issues.map(i => `${i.path.join('.')}: ${i.message}`).join(', ')
+  return { ok: false, error: issues }
+}
+
 export function createMcpServer(opts: McpOptions) {
-  const { broadcast, getUrl, version, startServer, stopServer, isRunning } = opts
+  const { broadcast, getUrl, getProjectDir, drainPendingComments, version, startServer, stopServer, isRunning } = opts
 
   const mcp = new Server(
     { name: 'marginalia', version },
@@ -35,14 +75,15 @@ export function createMcpServer(opts: McpOptions) {
         'Do NOT guess or fill in parameters the user did not specify. Use defaults unless the user explicitly provides a directory, port, or host.',
         'After starting, tell the user the URL so they can open it in their browser.',
         'If the user says "start marginalia on foo/" that means dir=foo/. If they say "on 0.0.0.0" that means host=0.0.0.0. Only set what they mention.',
-        'Code review comments arrive as <channel source="marginalia" ...>.',
+        'Code review comments arrive as <channel source="marginalia" ...> either via channel notifications or via poll_comments.',
         'Inline comments have file, line, and side attributes. General comments have type="general". Thread replies have type="thread_reply".',
         'IMPORTANT: Only use the reply tool when responding to <channel source="marginalia"> messages.',
         'If a message does NOT come from a <channel> tag, respond normally in the terminal.',
         'When you get a marginalia channel message, respond ONLY via the reply tool with the matching thread_id. Do not duplicate your response in the terminal.',
         'Replies support markdown.',
         'Before taking action on a review comment, send an ephemeral reply (ephemeral:true) so the user sees you are working on it. Then send the real reply when done.',
-        'When you edit files in response to review feedback, the reviewer sees changes automatically in the live diff view. Describe what you changed in your reply.'
+        'When you edit files in response to review feedback, the reviewer sees changes automatically in the live diff view. Describe what you changed in your reply.',
+        'If channels are not available, the user may ask you to poll for comments or set up a loop. Use poll_comments to check for pending comments from the UI.'
       ].join(' ')
     }
   )
@@ -91,6 +132,28 @@ export function createMcpServer(opts: McpOptions) {
           type: 'object' as const,
           properties: {}
         }
+      },
+      {
+        name: 'show_context',
+        description: 'Show a code snippet in the marginalia UI for context. Use when the user asks to see related code, call sites, definitions, etc.',
+        inputSchema: {
+          type: 'object' as const,
+          properties: {
+            file: { type: 'string', description: 'File path relative to the project root' },
+            startLine: { type: 'number', description: 'First line to show (1-based)' },
+            endLine: { type: 'number', description: 'Last line to show (1-based)' },
+            label: { type: 'string', description: 'Short description of why this snippet is relevant' }
+          },
+          required: ['file', 'startLine', 'endLine']
+        }
+      },
+      {
+        name: 'poll_comments',
+        description: 'Check for pending review comments from the marginalia UI. Returns formatted comments or empty string if none. Use this when channels are not available.',
+        inputSchema: {
+          type: 'object' as const,
+          properties: {}
+        }
       }
     ]
   }))
@@ -98,9 +161,14 @@ export function createMcpServer(opts: McpOptions) {
   mcp.setRequestHandler(CallToolRequestSchema, async (req) => {
     switch (req.params.name) {
       case 'start': {
-        const args = (req.params.arguments ?? {}) as { dir?: string; port?: number; host?: string }
-        const url = await startServer(args)
-        return { content: [{ type: 'text', text: `marginalia started at ${url}` }] }
+        const parsed = parseArgs(StartArgs, req.params.arguments ?? {})
+        if (!parsed.ok) return { content: [{ type: 'text', text: `error: ${parsed.error}` }] }
+        try {
+          const url = await startServer(parsed.data)
+          return { content: [{ type: 'text', text: `marginalia started at ${url}` }] }
+        } catch (err) {
+          return { content: [{ type: 'text', text: `failed to start: ${err instanceof Error ? err.message : err}` }] }
+        }
       }
       case 'stop': {
         if (!isRunning()) {
@@ -113,8 +181,10 @@ export function createMcpServer(opts: McpOptions) {
         if (!isRunning()) {
           return { content: [{ type: 'text', text: 'marginalia is not running, start it first' }] }
         }
-        const { thread_id, text, ephemeral } = req.params.arguments as { thread_id: string; text: string; ephemeral?: boolean }
-        broadcast({ type: 'reply', thread_id, text, ephemeral: !!ephemeral })
+        const parsed = parseArgs(ReplyArgs, req.params.arguments)
+        if (!parsed.ok) return { content: [{ type: 'text', text: `error: ${parsed.error}` }] }
+        const { thread_id, text, ephemeral } = parsed.data
+        broadcast({ type: 'reply', thread_id, text, ephemeral })
         return { content: [{ type: 'text', text: `replied to ${thread_id}${ephemeral ? ' (ephemeral)' : ''}` }] }
       }
       case 'get_url': {
@@ -122,6 +192,27 @@ export function createMcpServer(opts: McpOptions) {
           return { content: [{ type: 'text', text: 'marginalia is not running' }] }
         }
         return { content: [{ type: 'text', text: getUrl() }] }
+      }
+      case 'show_context': {
+        if (!isRunning()) {
+          return { content: [{ type: 'text', text: 'marginalia is not running, start it first' }] }
+        }
+        const parsed = parseArgs(ShowContextArgs, req.params.arguments)
+        if (!parsed.ok) return { content: [{ type: 'text', text: `error: ${parsed.error}` }] }
+        const { file, startLine, endLine, label } = parsed.data
+        try {
+          const fullPath = join(getProjectDir(), file)
+          const content = await readFile(fullPath, 'utf-8')
+          const lines = content.split('\n').slice(startLine - 1, endLine)
+          broadcast({ type: 'context', file, startLine, endLine, label: label ?? '', lines: lines.join('\n') })
+          return { content: [{ type: 'text', text: `showed ${file}:${startLine}-${endLine} in UI` }] }
+        } catch (err) {
+          return { content: [{ type: 'text', text: `failed to read ${file}: ${err}` }] }
+        }
+      }
+      case 'poll_comments': {
+        const comments = drainPendingComments()
+        return { content: [{ type: 'text', text: comments || '(no pending comments)' }] }
       }
       default:
         throw new Error(`unknown tool: ${req.params.name}`)

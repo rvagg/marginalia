@@ -4,7 +4,7 @@ import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { join } from 'node:path'
-import { createServer, type Server as HttpServer } from 'node:http'
+import type { Server as HttpServer } from 'node:http'
 import type { WebSocket } from 'ws'
 import { createMcpServer } from './mcp.js'
 import { createHttpServer } from './http.js'
@@ -25,7 +25,8 @@ const state: WebState = {
   clients: new Set<WebSocket>(),
   lastDiff: '',
   projectDir: process.cwd(),
-  seq: 0
+  seq: 0,
+  pendingComments: []
 }
 
 let serverUrl = ''
@@ -43,14 +44,17 @@ function broadcast(msg: Record<string, unknown>): void {
 
 const MAX_PORT_ATTEMPTS = 10
 
-function tryListen(server: HttpServer, port: number, host: string, attempt: number): Promise<string> {
+function tryListen(port: number, host: string, attempt: number): Promise<{ server: HttpServer; url: string }> {
   return new Promise((resolve, reject) => {
+    const server = createHttpServer(UI_DIR, state, mcp)
+
     function onError(err: NodeJS.ErrnoException) {
+      server.close()
       if (err.code === 'EADDRINUSE' && attempt < MAX_PORT_ATTEMPTS) {
         process.stderr.write(`marginalia: port ${port} in use, trying ${port + 1}\n`)
-        tryListen(server, port + 1, host, attempt + 1).then(resolve, reject)
+        tryListen(port + 1, host, attempt + 1).then(resolve, reject)
       } else {
-        reject(err)
+        reject(new Error(`could not bind to port ${port}: ${err.message}`))
       }
     }
 
@@ -61,7 +65,7 @@ function tryListen(server: HttpServer, port: number, host: string, attempt: numb
       const addr = server.address()
       const boundPort = typeof addr === 'object' && addr ? addr.port : port
       const boundHost = typeof addr === 'object' && addr ? addr.address : host
-      resolve(`http://${boundHost}:${boundPort}`)
+      resolve({ server, url: `http://${boundHost}:${boundPort}` })
     })
   })
 }
@@ -78,8 +82,9 @@ export async function startServer(opts: { dir?: string; port?: number; host?: st
   state.projectDir = dir
   state.lastDiff = await getCurrentDiff(dir)
 
-  httpServer = createHttpServer(UI_DIR, state, mcp)
-  serverUrl = await tryListen(httpServer, port, host, 1)
+  const result = await tryListen(port, host, 1)
+  httpServer = result.server
+  serverUrl = result.url
 
   pollInterval = setInterval(async () => {
     const diff = await getCurrentDiff(state.projectDir)
@@ -112,9 +117,20 @@ export async function stopServer(): Promise<void> {
 
 // MCP channel server
 
+function drainPendingComments(): string {
+  const comments = state.pendingComments.splice(0)
+  if (comments.length === 0) return ''
+  return comments.map(c => {
+    const attrs = Object.entries(c.meta).map(([k, v]) => `${k}="${v}"`).join(' ')
+    return `<channel source="marginalia" ${attrs}>\n${c.content}\n</channel>`
+  }).join('\n\n')
+}
+
 const mcp = createMcpServer({
   broadcast,
   getUrl: () => serverUrl,
+  getProjectDir: () => state.projectDir,
+  drainPendingComments,
   version,
   startServer,
   stopServer,
@@ -127,9 +143,22 @@ async function main(): Promise<void> {
   await mcp.connect(new StdioServerTransport())
 
   if (AUTO_START) {
-    await startServer()
+    try {
+      await startServer()
+    } catch (err) {
+      process.stderr.write(`marginalia: auto-start failed: ${err instanceof Error ? err.message : err}\n`)
+      // Don't exit — keep MCP server alive so the user can retry with start tool
+    }
   }
 }
+
+process.on('unhandledRejection', (err) => {
+  process.stderr.write(`marginalia: unhandled rejection: ${err instanceof Error ? err.stack : err}\n`)
+})
+
+process.on('uncaughtException', (err) => {
+  process.stderr.write(`marginalia: uncaught exception: ${err.stack}\n`)
+})
 
 main().catch((err) => {
   process.stderr.write(`marginalia: fatal: ${err}\n`)

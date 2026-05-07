@@ -12,18 +12,27 @@ const MIME_TYPES: Record<string, string> = {
   '.json': 'application/json; charset=utf-8'
 }
 
+export interface PendingComment {
+  content: string
+  meta: Record<string, string>
+}
+
 export interface WebState {
   clients: Set<WebSocket>
   lastDiff: string
   projectDir: string
   seq: number
+  pendingComments: PendingComment[]
 }
 
 async function serveStatic(res: ServerResponse, filePath: string): Promise<void> {
   try {
     const content = await readFile(filePath)
     const ext = filePath.substring(filePath.lastIndexOf('.'))
-    res.writeHead(200, { 'Content-Type': MIME_TYPES[ext] ?? 'application/octet-stream' })
+    res.writeHead(200, {
+      'Content-Type': MIME_TYPES[ext] ?? 'application/octet-stream',
+      'Cache-Control': 'no-cache'
+    })
     res.end(content)
   } catch {
     res.writeHead(404)
@@ -47,6 +56,22 @@ function handleHttpRequest(uiDir: string, state: WebState) {
     if (url.pathname === '/api/diff') {
       res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' })
       res.end(JSON.stringify({ diff: state.lastDiff, projectDir: state.projectDir }))
+      return
+    }
+
+    if (url.pathname === '/api/pending-comments') {
+      const comments = state.pendingComments.splice(0)
+      if (comments.length === 0) {
+        res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' })
+        res.end('')
+        return
+      }
+      const formatted = comments.map(c => {
+        const attrs = Object.entries(c.meta).map(([k, v]) => `${k}="${v}"`).join(' ')
+        return `<channel source="marginalia" ${attrs}>\n${c.content}\n</channel>`
+      }).join('\n\n')
+      res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' })
+      res.end(formatted)
       return
     }
 
@@ -77,16 +102,21 @@ function handleWebSocketMessage(ws: WebSocket, state: WebState, mcp: McpServer, 
         meta.side = String(msg.side)
       }
       deliver(mcp, String(msg.text), meta)
+      state.pendingComments.push({ content: String(msg.text), meta })
       ws.send(JSON.stringify({ ...msg, type: 'comment_ack', thread_id: threadId }))
       break
     }
     case 'thread_reply': {
-      deliver(mcp, String(msg.text), { type: 'thread_reply', thread_id: String(msg.thread_id) })
+      const meta = { type: 'thread_reply', thread_id: String(msg.thread_id) }
+      deliver(mcp, String(msg.text), meta)
+      state.pendingComments.push({ content: String(msg.text), meta })
       break
     }
     case 'general': {
       const threadId = `t_${++state.seq}`
-      deliver(mcp, String(msg.text), { type: 'general', thread_id: threadId })
+      const meta: Record<string, string> = { type: 'general', thread_id: threadId }
+      deliver(mcp, String(msg.text), meta)
+      state.pendingComments.push({ content: String(msg.text), meta })
       ws.send(JSON.stringify({ ...msg, type: 'comment_ack', thread_id: threadId }))
       break
     }
@@ -114,5 +144,10 @@ export function createHttpServer(uiDir: string, state: WebState, mcp: McpServer)
   const httpServer = createServer(handleHttpRequest(uiDir, state))
   const wss = new WebSocketServer({ server: httpServer })
   wss.on('connection', (ws: WebSocket) => handleWebSocketConnection(ws, state, mcp))
+  // Swallow WSS errors that propagate from the underlying HTTP server
+  // (e.g. EADDRINUSE during listen). The HTTP server's own error handler
+  // is responsible for the actual error flow; we just need WSS to not
+  // crash the process with an unhandled 'error' event.
+  wss.on('error', () => {})
   return httpServer
 }

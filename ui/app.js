@@ -36,11 +36,12 @@
   let chatExpanded = false
 
   // --- Elements ---
+  const filenav = document.getElementById('filenav')
+  const fileCountEl = document.getElementById('file-count')
   const diffContainer = document.getElementById('diff-container')
   const loadingState = document.getElementById('loading-state')
   const emptyState = document.getElementById('empty-state')
   const projectDirEl = document.getElementById('project-dir')
-  const fileCountEl = document.getElementById('file-count')
   const statusEl = document.getElementById('status')
   const permissionBar = document.getElementById('permission-bar')
   const permissionText = document.getElementById('permission-text')
@@ -51,6 +52,74 @@
   const chatHistory = document.getElementById('chat-history')
   const generalInput = document.getElementById('general-input')
   const generalSend = document.getElementById('general-send')
+
+  // --- Context snippets ---
+
+  const contextContainer = document.createElement('div')
+  contextContainer.id = 'context-snippets'
+  diffContainer.parentNode.insertBefore(contextContainer, diffContainer)
+
+  function addContextSnippet(msg) {
+    const snippet = document.createElement('div')
+    snippet.className = 'context-snippet'
+    const header = `<div class="context-snippet-header">` +
+      `<span class="context-snippet-file">${escapeHtml(msg.file)}:${msg.startLine}-${msg.endLine}</span>` +
+      (msg.label ? `<span class="context-snippet-label">${escapeHtml(msg.label)}</span>` : '') +
+      `<button class="comment-dismiss" title="Dismiss">&times;</button>` +
+      `</div>`
+    const lines = msg.lines.split('\n')
+    const numbered = lines.map((line, i) =>
+      `<span class="context-ln">${msg.startLine + i}</span>${escapeHtml(line)}`
+    ).join('\n')
+    snippet.innerHTML = header + `<pre class="context-snippet-code"><code>${numbered}</code></pre>`
+    snippet.querySelector('.comment-dismiss').addEventListener('click', () => snippet.remove())
+    contextContainer.appendChild(snippet)
+    snippet.scrollIntoView({ block: 'nearest', behavior: 'instant' })
+  }
+
+  // --- File nav ---
+
+  function updateFileCount(n) {
+    const expanded = fileCountEl.classList.contains('active')
+    const chevron = expanded ? '\u25B4' : '\u25BE'
+    fileCountEl.textContent = n + ' file' + (n !== 1 ? 's' : '') + ' ' + chevron
+  }
+
+  fileCountEl.addEventListener('click', () => {
+    filenav.classList.toggle('hidden')
+    fileCountEl.classList.toggle('active')
+    const n = filenav.children.length
+    updateFileCount(n)
+  })
+
+  function updateFilenav(diffText) {
+    filenav.innerHTML = ''
+    if (!diffText) return
+    const chunks = diffText.split(/(?=^diff --git )/m)
+    for (const chunk of chunks) {
+      const nameMatch = chunk.match(/^diff --git a\/(.+?) b\/(.+)$/m)
+      if (!nameMatch) continue
+      const file = nameMatch[2]
+      const isNew = /^new file mode/m.test(chunk)
+      const isDel = /^deleted file mode/m.test(chunk)
+      const badge = isNew ? 'added' : isDel ? 'deleted' : 'changed'
+      const label = isNew ? 'A' : isDel ? 'D' : 'M'
+      const item = document.createElement('div')
+      item.className = 'filenav-item' + (viewedFiles[file] ? ' filenav-viewed' : '')
+      item.innerHTML = `<span class="filenav-badge filenav-badge-${badge}">${label}</span>${escapeHtml(file)}`
+      item.addEventListener('click', () => {
+        const wrappers = diffContainer.querySelectorAll('.d2h-file-wrapper')
+        for (const w of wrappers) {
+          const n = w.querySelector('.d2h-file-name')
+          if (n && n.textContent.trim() === file) {
+            w.scrollIntoView({ block: 'start', behavior: 'instant' })
+            break
+          }
+        }
+      })
+      filenav.appendChild(item)
+    }
+  }
 
   // --- WebSocket ---
 
@@ -94,6 +163,9 @@
         case 'permission':
           showPermission(msg)
           break
+        case 'context':
+          addContextSnippet(msg)
+          break
       }
     }
   }
@@ -116,7 +188,7 @@
       diffContainer.innerHTML = ''
       diffContainer.appendChild(emptyState)
       emptyState.classList.remove('hidden')
-      fileCountEl.textContent = '0 files'
+      updateFileCount(0)
       return
     }
 
@@ -140,7 +212,7 @@
     lastFileDiffs = currentFileDiffs
 
     const fileHeaders = Object.keys(currentFileDiffs).length
-    fileCountEl.textContent = fileHeaders + ' file' + (fileHeaders !== 1 ? 's' : '')
+    updateFileCount(fileHeaders)
 
     // eslint-disable-next-line no-undef
     const diff2htmlUi = new Diff2HtmlUI(diffContainer, diffText, {
@@ -156,6 +228,7 @@
     diff2htmlUi.draw()
     diff2htmlUi.highlightCode()
 
+    updateFilenav(diffText)
     injectViewedToggles()
     attachGutterHandlers()
     reinjectThreads()
@@ -474,8 +547,8 @@
     const content = renderMarkdown(m.text)
     const ephClass = m.ephemeral ? ' comment-ephemeral' : ''
     return `<div class="comment-message comment-${m.from}${ephClass}">` +
-      `<strong>${m.from === 'user' ? 'you' : 'claude'}</strong> ` +
-      `<span class="mg-md">${content}</span></div>`
+      `<strong>${m.from === 'user' ? 'you' : 'claude'}</strong>` +
+      `<div class="mg-md">${content}</div></div>`
   }
 
   function renderThreadEl(thread) {
@@ -601,7 +674,7 @@
     const div = document.createElement('div')
     div.className = 'chat-message chat-' + from + (ephemeral ? ' chat-ephemeral' : '')
     const content = renderMarkdown(text)
-    div.innerHTML = `<strong>${escapeHtml(from)}</strong> <span class="mg-md">${content}</span>`
+    div.innerHTML = `<strong>${escapeHtml(from)}</strong><div class="mg-md">${content}</div>`
     chatHistory.appendChild(div)
     while (chatHistory.children.length > MAX_CHAT_MESSAGES) {
       chatHistory.removeChild(chatHistory.firstChild)

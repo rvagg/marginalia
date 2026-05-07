@@ -126,6 +126,33 @@ The MCP `instructions` field tells Claude to:
 - Send an ephemeral reply before taking action on review comments
 - Replies support markdown
 
+## Polling fallback (when channels are unavailable)
+
+The MCP channels feature (`claude/channel`) is gated by a server-side feature flag and may not be available. When channels are disabled, comments from the web UI queue up and can be retrieved via polling.
+
+**poll_comments tool**: The agent calls `poll_comments` to drain pending comments. Returns formatted `<channel>` tags or empty if none.
+
+**HTTP endpoint**: `GET /api/pending-comments` returns and drains the queue as formatted text. Used by hooks.
+
+**Hook setup** (recommended): Add to `.claude/settings.local.json` in your project:
+
+```json
+{
+  "hooks": {
+    "UserPromptSubmit": [{
+      "hooks": [{
+        "type": "command",
+        "command": "curl -sf http://localhost:${MARGINALIA_PORT:-3456}/api/pending-comments 2>/dev/null || true"
+      }]
+    }]
+  }
+}
+```
+
+This drains pending comments on every user message, so review comments arrive automatically.
+
+**Loop fallback**: If hooks aren't set up, use `/loop 10s poll_comments` to poll periodically.
+
 ## Development notes
 
 - No build step for `ui/` files, they're served directly
