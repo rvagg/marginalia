@@ -25,9 +25,10 @@ Browser  <--WebSocket-->  MCP Channel Server  <--stdio-->  Claude Code
 ```
 src/
   server.ts    Entry point, wiring, startup
-  mcp.ts       MCP channel server, tools (reply, get_url), permission relay
+  mcp.ts       MCP channel server, tools (start/stop/reply/get_url/show_context/poll_comments), permission relay
   http.ts      HTTP static server, WebSocket message handling
   diff.ts      Git diff engine (temporary index, polling)
+  poller.ts    Diff polling loop with idle/overlap protection
 dist/          Compiled JS output (gitignored)
 ui/
   index.html   Page shell, CDN script tags
@@ -54,12 +55,19 @@ ui/
 
 **File-level comments**: Use `line: 0` to distinguish from line comments. Since there's no diff row to anchor to, file-level thread replies fall back to the chat footer.
 
+**Context snippets**: The `show_context` tool reads a project-relative file range and broadcasts a transient snippet above the diff. It is UI context only; it does not create a review thread.
+
+**Comment queue**: Browser comments are always queued in `pendingComments` as well as delivered over `claude/channel`. `poll_comments` and `GET /api/pending-comments` drain the same queue, so draining is destructive.
+
 ## Building
 
 ```bash
 npm install
 npm run build    # tsc -> dist/
+npm test         # build + node:test over compiled *.test.js
 ```
+
+Tests live beside source as `src/*.test.ts` and compile to gitignored `dist/*.test.js`.
 
 ## Running in Claude Code
 
@@ -114,8 +122,10 @@ Add to `.claude/settings.local.json` in the project you're reviewing.
 
 - **`start`** - Start the review server. Optional params: `dir` (directory to watch), `port`, `host`. All default from env vars or sensible defaults. The agent should only set params the user explicitly asks for.
 - **`stop`** - Stop the review server.
-- **`reply`** - Reply to a comment thread. Params: `thread_id`, `text` (markdown), `ephemeral` (boolean). Ephemeral replies show as transient status, replaced by next non-ephemeral reply.
+- **`reply`** - Reply to a comment thread. Params: `thread_id`, `text` (markdown), `ephemeral` (boolean). Also accepts legacy `body`. Ephemeral replies show as transient status, replaced by next non-ephemeral reply.
 - **`get_url`** - Returns the server URL if running.
+- **`show_context`** - Broadcasts a file snippet to the UI. Params: `file`, `startLine`, `endLine`, optional `label`.
+- **`poll_comments`** - Drains queued browser comments for clients without channel notifications.
 
 ## Instructions to Claude
 
@@ -157,5 +167,7 @@ This drains pending comments on every user message, so review comments arrive au
 
 - No build step for `ui/` files, they're served directly
 - `npm run build` compiles `src/*.ts` to `dist/*.js`
+- `npm test` is the baseline quality check before handing off code changes
+- Static UI assets are served with `Cache-Control: no-cache`; a normal reload should pick up CSS/JS changes
 - When developing marginalia itself, remove `--watch` from the MCP command to avoid crash loops on compile errors with a fixed port (another instance can steal the port during restart)
-- Browser hard-refresh (Ctrl+Shift+R) needed after CSS changes since the server doesn't set cache headers
+- Binding to `0.0.0.0` returns a listen URL with that host; tell local users to open `127.0.0.1:<port>` or the machine LAN IP instead

@@ -9,6 +9,7 @@ import type { WebSocket } from 'ws'
 import { createMcpServer } from './mcp.js'
 import { createHttpServer } from './http.js'
 import { getCurrentDiff } from './diff.js'
+import { createDiffPoller, type DiffPoller } from './poller.js'
 import type { WebState } from './http.js'
 
 const ROOT_DIR = join(fileURLToPath(new URL('.', import.meta.url)), '..')
@@ -31,7 +32,7 @@ const state: WebState = {
 
 let serverUrl = ''
 let httpServer: HttpServer | null = null
-let pollInterval: ReturnType<typeof setInterval> | null = null
+let poller: DiffPoller | null = null
 
 function broadcast(msg: Record<string, unknown>): void {
   const data = JSON.stringify(msg)
@@ -86,13 +87,17 @@ export async function startServer(opts: { dir?: string; port?: number; host?: st
   httpServer = result.server
   serverUrl = result.url
 
-  pollInterval = setInterval(async () => {
-    const diff = await getCurrentDiff(state.projectDir)
-    if (diff !== state.lastDiff) {
-      state.lastDiff = diff
-      broadcast({ type: 'diff', diff })
-    }
-  }, 500)
+  poller = createDiffPoller({
+    intervalMs: 500,
+    getProjectDir: () => state.projectDir,
+    getCurrentDiff,
+    getLastDiff: () => state.lastDiff,
+    setLastDiff: (diff) => { state.lastDiff = diff },
+    hasClients: () => state.clients.size > 0,
+    broadcast,
+    log: (msg) => { process.stderr.write(msg) }
+  })
+  poller.start()
 
   process.stderr.write(`marginalia: ${serverUrl}\n`)
   process.stderr.write(`marginalia: watching ${dir}\n`)
@@ -101,9 +106,9 @@ export async function startServer(opts: { dir?: string; port?: number; host?: st
 }
 
 export async function stopServer(): Promise<void> {
-  if (pollInterval) {
-    clearInterval(pollInterval)
-    pollInterval = null
+  if (poller) {
+    poller.stop()
+    poller = null
   }
   if (httpServer) {
     for (const ws of state.clients) ws.close()
