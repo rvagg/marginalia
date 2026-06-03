@@ -144,8 +144,20 @@ const mcp = createMcpServer({
 
 // Start
 
+// When the parent (Claude Code) dies, stdin closes. The stdio transport
+// otherwise busy-loops on EOF, orphaning a process that spins at 100% CPU.
+// Exit cleanly on stdin end/close.
+function exitOnStdinClose(): void {
+  const shutdown = () => {
+    void stopServer().finally(() => process.exit(0))
+  }
+  process.stdin.on('end', shutdown)
+  process.stdin.on('close', shutdown)
+}
+
 async function main(): Promise<void> {
   await mcp.connect(new StdioServerTransport())
+  exitOnStdinClose()
 
   if (AUTO_START) {
     try {

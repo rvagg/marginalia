@@ -569,6 +569,7 @@
       '</div>' +
       '</div>'
     cell.querySelector('.comment-dismiss').addEventListener('click', () => {
+      thread.dismissed = true
       thread.el.remove()
       thread.el = null
     })
@@ -592,7 +593,8 @@
 
   function reinjectThreads() {
     for (const threadId of Object.keys(threads)) {
-      if (threads[threadId].file) injectThread(threadId)
+      const thread = threads[threadId]
+      if (thread.file && !thread.dismissed) injectThread(threadId)
     }
   }
 
