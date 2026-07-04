@@ -76,24 +76,24 @@
 /* --- Row colours: GitHub-matching del/ins/info --- */
 
 /* Deletions: soft red */
-.d2h-del { background: #ffebe9 !important; }
-.d2h-del .d2h-code-linenumber { background: #ffd7d5 !important; color: rgba(31, 35, 40, 0.38) !important; }
-.d2h-del .d2h-code-line, .d2h-del .d2h-code-line-ctn { background: #ffebe9 !important; }
+.d2h-del { background: var(--mg-diff-del-line-bg) !important; }
+.d2h-del .d2h-code-linenumber { background: var(--mg-diff-del-gutter-bg) !important; color: var(--mg-diff-line-number-color) !important; }
+.d2h-del .d2h-code-line, .d2h-del .d2h-code-line-ctn { background: var(--mg-diff-del-line-bg) !important; }
 
 /* Insertions: soft green */
-.d2h-ins { background: #e6ffec !important; }
-.d2h-ins .d2h-code-linenumber { background: #ccffd8 !important; color: rgba(31, 35, 40, 0.38) !important; }
-.d2h-ins .d2h-code-line, .d2h-ins .d2h-code-line-ctn { background: #e6ffec !important; }
+.d2h-ins { background: var(--mg-diff-ins-line-bg) !important; }
+.d2h-ins .d2h-code-linenumber { background: var(--mg-diff-ins-gutter-bg) !important; color: var(--mg-diff-line-number-color) !important; }
+.d2h-ins .d2h-code-line, .d2h-ins .d2h-code-line-ctn { background: var(--mg-diff-ins-line-bg) !important; }
 
 /* Character-level highlights within changed lines */
 .d2h-del del, .d2h-code-line-ctn del {
-  background: #ff818266 !important;
+  background: var(--mg-diff-del-word-bg) !important;
   text-decoration: none !important;
   border-radius: 2px;
 }
 
 .d2h-ins ins, .d2h-code-line-ctn ins {
-  background: #46c75666 !important;
+  background: var(--mg-diff-ins-word-bg) !important;
   text-decoration: none !important;
   border-radius: 2px;
 }
@@ -111,17 +111,6 @@
 .d2h-tag { background: var(--mg-bg) !important; }
 
 /* --- Dark mode diff colours --- */
-
-[data-theme="dark"] .d2h-del { background: rgba(248, 81, 73, 0.1) !important; }
-[data-theme="dark"] .d2h-del .d2h-code-linenumber { background: rgba(248, 81, 73, 0.15) !important; color: var(--mg-text-muted) !important; }
-[data-theme="dark"] .d2h-del .d2h-code-line, [data-theme="dark"] .d2h-del .d2h-code-line-ctn { background: rgba(248, 81, 73, 0.1) !important; }
-
-[data-theme="dark"] .d2h-ins { background: rgba(46, 160, 67, 0.15) !important; }
-[data-theme="dark"] .d2h-ins .d2h-code-linenumber { background: rgba(46, 160, 67, 0.2) !important; color: var(--mg-text-muted) !important; }
-[data-theme="dark"] .d2h-ins .d2h-code-line, [data-theme="dark"] .d2h-ins .d2h-code-line-ctn { background: rgba(46, 160, 67, 0.15) !important; }
-
-[data-theme="dark"] .d2h-del del, [data-theme="dark"] .d2h-code-line-ctn del { background: rgba(248, 81, 73, 0.4) !important; }
-[data-theme="dark"] .d2h-ins ins, [data-theme="dark"] .d2h-code-line-ctn ins { background: rgba(46, 160, 67, 0.4) !important; }
 
 [data-theme="dark"] .d2h-info { background: rgba(56, 139, 253, 0.1) !important; }
 [data-theme="dark"] .d2h-info .d2h-code-linenumber { background: rgba(56, 139, 253, 0.1) !important; }

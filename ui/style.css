@@ -16,6 +16,13 @@
   --mg-btn-primary-hover: #15692e;
   --mg-viewed-bg: #dafbe1;
   --mg-viewed-border: #aceebb;
+  --mg-diff-del-line-bg: #ffe1df;
+  --mg-diff-del-gutter-bg: #ffd0cc;
+  --mg-diff-del-word-bg: rgba(255, 129, 130, 0.28);
+  --mg-diff-ins-line-bg: #ddf8e5;
+  --mg-diff-ins-gutter-bg: #c8f2d1;
+  --mg-diff-ins-word-bg: rgba(70, 199, 86, 0.26);
+  --mg-diff-line-number-color: rgba(31, 35, 40, 0.38);
   --mg-permission-bg: #fff8c5;
   --mg-permission-border: #d4a72c;
   --mg-permission-text: #6f5200;
@@ -39,6 +46,13 @@
   --mg-btn-primary-hover: #2ea043;
   --mg-viewed-bg: rgba(46, 160, 67, 0.15);
   --mg-viewed-border: rgba(46, 160, 67, 0.4);
+  --mg-diff-del-line-bg: rgba(248, 81, 73, 0.17);
+  --mg-diff-del-gutter-bg: rgba(248, 81, 73, 0.22);
+  --mg-diff-del-word-bg: rgba(248, 81, 73, 0.3);
+  --mg-diff-ins-line-bg: rgba(46, 160, 67, 0.22);
+  --mg-diff-ins-gutter-bg: rgba(46, 160, 67, 0.27);
+  --mg-diff-ins-word-bg: rgba(46, 160, 67, 0.32);
+  --mg-diff-line-number-color: var(--mg-text-muted);
   --mg-permission-bg: rgba(187, 128, 9, 0.15);
   --mg-permission-border: #bb8009;
   --mg-permission-text: #d29922;
