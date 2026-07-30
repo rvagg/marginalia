@@ -13,7 +13,7 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: rvagg/depsound-action@ba0a7a165d7b4f72671e0453612fbcfbd328bd2e # v0.3.2
+      - uses: rvagg/depsound-action@e64e9937f8f5d7017446ce4f2375705e6c05a517 # v0.3.3
   post:
     needs: review
     if: ${{ always() && needs.review.result != 'cancelled' }}
@@ -23,4 +23,4 @@ jobs:
       checks: write
       actions: read
     steps:
-      - uses: rvagg/depsound-action/post@ba0a7a165d7b4f72671e0453612fbcfbd328bd2e # v0.3.2
+      - uses: rvagg/depsound-action/post@e64e9937f8f5d7017446ce4f2375705e6c05a517 # v0.3.3
