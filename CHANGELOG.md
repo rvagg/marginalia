@@ -1,3 +1,9 @@
+## [0.0.10](https://github.com/rvagg/marginalia/compare/v0.0.9...v0.0.10) (2026-07-30)
+
+### Trivial Changes
+
+* add repo ([#11](https://github.com/rvagg/marginalia/issues/11)) ([fa1f88e](https://github.com/rvagg/marginalia/commit/fa1f88e24ce7b03f5e658519805d8324a3ac6204))
+
 ## [0.0.9](https://github.com/rvagg/marginalia/compare/v0.0.8...v0.0.9) (2026-07-30)
 
 ### Trivial Changes

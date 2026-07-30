@@ -1,6 +1,6 @@
 {
   "name": "@rvagg/marginalia",
-  "version": "0.0.9",
+  "version": "0.0.10",
   "description": "Live browser code review for coding agents, with inline comments and threaded replies",
   "repository": {
     "type": "git",
