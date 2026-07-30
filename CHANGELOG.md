@@ -1,3 +1,10 @@
+## [0.0.4](https://github.com/rvagg/marginalia/compare/v0.0.3...v0.0.4) (2026-07-30)
+
+### Trivial Changes
+
+* **deps:** bump fast-uri from 3.1.0 to 3.1.4 ([#3](https://github.com/rvagg/marginalia/issues/3)) ([82bdfc2](https://github.com/rvagg/marginalia/commit/82bdfc2d3e846b5afefbc621f56558db0c294c6f))
+* **deps:** bump hono from 4.12.9 to 4.12.32 ([#4](https://github.com/rvagg/marginalia/issues/4)) ([65801ce](https://github.com/rvagg/marginalia/commit/65801ce8b58f0e1ee0e75c7743b68378453c60f7))
+
 ## [0.0.3](https://github.com/rvagg/marginalia/compare/v0.0.2...v0.0.3) (2026-07-30)
 
 ### Trivial Changes
