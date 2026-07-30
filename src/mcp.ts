@@ -1,11 +1,16 @@
 import { Server } from '@modelcontextprotocol/sdk/server/index.js'
 import {
+  CallToolRequestSchema,
+  ListResourcesRequestSchema,
   ListToolsRequestSchema,
-  CallToolRequestSchema
+  ReadResourceRequestSchema,
+  SubscribeRequestSchema,
+  UnsubscribeRequestSchema
 } from '@modelcontextprotocol/sdk/types.js'
 import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { z } from 'zod'
+import { CommentMailbox, COMMENTS_RESOURCE_URI } from './comments.js'
 
 export type BroadcastFn = (msg: Record<string, unknown>) => void
 
@@ -13,7 +18,7 @@ interface McpOptions {
   broadcast: BroadcastFn
   getUrl: () => string
   getProjectDir: () => string
-  drainPendingComments: () => string
+  mailbox: CommentMailbox
   version: string
   startServer: (opts?: { dir?: string; port?: number; host?: string }) => Promise<string>
   stopServer: () => Promise<void>
@@ -57,13 +62,14 @@ function parseArgs<T>(schema: z.ZodType<T>, args: unknown): { ok: true; data: T 
 }
 
 export function createMcpServer(opts: McpOptions) {
-  const { broadcast, getUrl, getProjectDir, drainPendingComments, version, startServer, stopServer, isRunning } = opts
+  const { broadcast, getUrl, getProjectDir, mailbox, version, startServer, stopServer, isRunning } = opts
 
   const mcp = new Server(
     { name: 'marginalia', version },
     {
       capabilities: {
         tools: {},
+        resources: { subscribe: true },
         experimental: {
           'claude/channel': {},
           'claude/channel/permission': {}
@@ -75,8 +81,8 @@ export function createMcpServer(opts: McpOptions) {
         'Do NOT guess or fill in parameters the user did not specify. Use defaults unless the user explicitly provides a directory, port, or host.',
         'After starting, tell the user the URL so they can open it in their browser.',
         'If the user says "start marginalia on foo/" that means dir=foo/. If they say "on 0.0.0.0" that means host=0.0.0.0. Only set what they mention.',
-        'Code review comments arrive as <channel source="marginalia" ...> either via channel notifications or via poll_comments.',
-        'Inline comments have file, line, and side attributes. General comments have type="general". Thread replies have type="thread_reply".',
+        `Code review comments arrive as <channel source="marginalia" ...> through channel notifications, the ${COMMENTS_RESOURCE_URI} resource, or poll_comments.`,
+        `When notified that ${COMMENTS_RESOURCE_URI} changed, read mcp://${COMMENTS_RESOURCE_URI} to receive the pending comments.`,
         'IMPORTANT: Only use the reply tool when responding to <channel source="marginalia"> messages.',
         'If a message does NOT come from a <channel> tag, respond normally in the terminal.',
         'When you get a marginalia channel message, respond ONLY via the reply tool with the matching thread_id. Do not duplicate your response in the terminal.',
@@ -89,6 +95,37 @@ export function createMcpServer(opts: McpOptions) {
   )
 
   // Tools
+
+  let commentsSubscribed = false
+
+  mcp.setRequestHandler(ListResourcesRequestSchema, async () => ({
+    resources: [{
+      uri: COMMENTS_RESOURCE_URI,
+      name: 'Pending review comments',
+      description: 'Unanswered comments from the Marginalia browser review UI.',
+      mimeType: 'text/plain'
+    }]
+  }))
+
+  mcp.setRequestHandler(ReadResourceRequestSchema, async ({ params }) => ({
+    contents: [{
+      uri: params.uri,
+      mimeType: 'text/plain',
+      text: params.uri === COMMENTS_RESOURCE_URI
+        ? mailbox.read() || '(no pending comments)'
+        : '(unknown resource)'
+    }]
+  }))
+
+  mcp.setRequestHandler(SubscribeRequestSchema, async ({ params }) => {
+    if (params.uri === COMMENTS_RESOURCE_URI) commentsSubscribed = true
+    return {}
+  })
+
+  mcp.setRequestHandler(UnsubscribeRequestSchema, async ({ params }) => {
+    if (params.uri === COMMENTS_RESOURCE_URI) commentsSubscribed = false
+    return {}
+  })
 
   mcp.setRequestHandler(ListToolsRequestSchema, async () => ({
     tools: [
@@ -185,6 +222,7 @@ export function createMcpServer(opts: McpOptions) {
         if (!parsed.ok) return { content: [{ type: 'text', text: `error: ${parsed.error}` }] }
         const { thread_id, text, ephemeral } = parsed.data
         broadcast({ type: 'reply', thread_id, text, ephemeral })
+        if (!ephemeral) mailbox.acknowledgeThread(thread_id)
         return { content: [{ type: 'text', text: `replied to ${thread_id}${ephemeral ? ' (ephemeral)' : ''}` }] }
       }
       case 'get_url': {
@@ -211,7 +249,7 @@ export function createMcpServer(opts: McpOptions) {
         }
       }
       case 'poll_comments': {
-        const comments = drainPendingComments()
+        const comments = mailbox.drain()
         return { content: [{ type: 'text', text: comments || '(no pending comments)' }] }
       }
       default:
@@ -241,10 +279,22 @@ export function createMcpServer(opts: McpOptions) {
     })
   })
 
-  return mcp
+  return {
+    server: mcp,
+    publishComment(content: string, meta: Record<string, string>): void {
+      mailbox.add({ content, meta })
+      if (!commentsSubscribed) {
+        deliver(mcp, content, meta)
+        return
+      }
+      void mcp.sendResourceUpdated({ uri: COMMENTS_RESOURCE_URI }).catch(err => {
+        process.stderr.write(`marginalia: failed to notify comment resource update: ${err instanceof Error ? err.message : err}\n`)
+      })
+    }
+  }
 }
 
-export function deliver(mcp: Server, content: string, meta: Record<string, string>): void {
+function deliver(mcp: Server, content: string, meta: Record<string, string>): void {
   void mcp.notification({
     method: 'notifications/claude/channel',
     params: { content, meta }

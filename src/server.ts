@@ -11,6 +11,7 @@ import { createHttpServer } from './http.js'
 import { getCurrentDiff } from './diff.js'
 import { createDiffPoller, type DiffPoller } from './poller.js'
 import type { WebState } from './http.js'
+import { CommentMailbox } from './comments.js'
 
 const ROOT_DIR = join(fileURLToPath(new URL('.', import.meta.url)), '..')
 const { version } = JSON.parse(readFileSync(join(ROOT_DIR, 'package.json'), 'utf-8'))
@@ -27,7 +28,7 @@ const state: WebState = {
   lastDiff: '',
   projectDir: process.cwd(),
   seq: 0,
-  pendingComments: []
+  mailbox: new CommentMailbox()
 }
 
 let serverUrl = ''
@@ -47,7 +48,7 @@ const MAX_PORT_ATTEMPTS = 10
 
 function tryListen(port: number, host: string, attempt: number): Promise<{ server: HttpServer; url: string }> {
   return new Promise((resolve, reject) => {
-    const server = createHttpServer(UI_DIR, state, mcp)
+    const server = createHttpServer(UI_DIR, state, mcp, publishComment)
 
     function onError(err: NodeJS.ErrnoException) {
       server.close()
@@ -122,20 +123,12 @@ export async function stopServer(): Promise<void> {
 
 // MCP channel server
 
-function drainPendingComments(): string {
-  const comments = state.pendingComments.splice(0)
-  if (comments.length === 0) return ''
-  return comments.map(c => {
-    const attrs = Object.entries(c.meta).map(([k, v]) => `${k}="${v}"`).join(' ')
-    return `<channel source="marginalia" ${attrs}>\n${c.content}\n</channel>`
-  }).join('\n\n')
-}
 
-const mcp = createMcpServer({
+const { server: mcp, publishComment } = createMcpServer({
   broadcast,
   getUrl: () => serverUrl,
   getProjectDir: () => state.projectDir,
-  drainPendingComments,
+  mailbox: state.mailbox,
   version,
   startServer,
   stopServer,

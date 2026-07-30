@@ -34,6 +34,7 @@
   const viewedFiles = {} // filename -> diff hash (to detect changes)
   let pendingPermission = null
   let chatExpanded = false
+  let agentName = 'agent'
 
   // --- Elements ---
   const filenav = document.getElementById('filenav')
@@ -136,6 +137,7 @@
       switch (msg.type) {
         case 'init':
           projectDirEl.textContent = msg.projectDir
+          agentName = typeof msg.agentName === 'string' && msg.agentName ? msg.agentName : 'agent'
           renderDiff(msg.diff)
           break
         case 'diff':
@@ -484,10 +486,10 @@
       if (thread.file) {
         renderThreadEl(thread)
       } else {
-        addChatMessage('claude', text, ephemeral)
+        addChatMessage(agentName, text, ephemeral)
       }
     } else {
-      addChatMessage('claude', text, ephemeral)
+      addChatMessage(agentName, text, ephemeral)
     }
   }
 
@@ -547,7 +549,7 @@
     const content = renderMarkdown(m.text)
     const ephClass = m.ephemeral ? ' comment-ephemeral' : ''
     return `<div class="comment-message comment-${m.from}${ephClass}">` +
-      `<strong>${m.from === 'user' ? 'you' : 'claude'}</strong>` +
+      `<strong>${m.from === 'user' ? 'you' : escapeHtml(agentName)}</strong>` +
       `<div class="mg-md">${content}</div></div>`
   }
 
@@ -674,7 +676,7 @@
       chatHistory.querySelectorAll('.chat-ephemeral').forEach(el => el.remove())
     }
     const div = document.createElement('div')
-    div.className = 'chat-message chat-' + from + (ephemeral ? ' chat-ephemeral' : '')
+    div.className = 'chat-message chat-' + (from === 'you' ? 'you' : 'assistant') + (ephemeral ? ' chat-ephemeral' : '')
     const content = renderMarkdown(text)
     div.innerHTML = `<strong>${escapeHtml(from)}</strong><div class="mg-md">${content}</div>`
     chatHistory.appendChild(div)

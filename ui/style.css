@@ -16,13 +16,14 @@
   --mg-btn-primary-hover: #15692e;
   --mg-viewed-bg: #dafbe1;
   --mg-viewed-border: #aceebb;
-  --mg-diff-del-line-bg: #ffe1df;
-  --mg-diff-del-gutter-bg: #ffd0cc;
-  --mg-diff-del-word-bg: rgba(255, 129, 130, 0.28);
-  --mg-diff-ins-line-bg: #ddf8e5;
-  --mg-diff-ins-gutter-bg: #c8f2d1;
-  --mg-diff-ins-word-bg: rgba(70, 199, 86, 0.26);
+  --mg-diff-del-line-bg: #ffebe9;
+  --mg-diff-del-gutter-bg: #ffcecb;
+  --mg-diff-del-word-bg: #ffcecb;
+  --mg-diff-ins-line-bg: #dafbe1;
+  --mg-diff-ins-gutter-bg: #aceebb;
+  --mg-diff-ins-word-bg: #aceebb;
   --mg-diff-line-number-color: rgba(31, 35, 40, 0.38);
+  --mg-diff-hunk-text: #59636e;
   --mg-permission-bg: #fff8c5;
   --mg-permission-border: #d4a72c;
   --mg-permission-text: #6f5200;
@@ -53,6 +54,7 @@
   --mg-diff-ins-gutter-bg: rgba(46, 160, 67, 0.27);
   --mg-diff-ins-word-bg: rgba(46, 160, 67, 0.32);
   --mg-diff-line-number-color: var(--mg-text-muted);
+  --mg-diff-hunk-text: var(--mg-text-muted);
   --mg-permission-bg: rgba(187, 128, 9, 0.15);
   --mg-permission-border: #bb8009;
   --mg-permission-text: #d29922;
@@ -82,14 +84,14 @@ body { display: flex; flex-direction: column; }
   padding: 0 16px;
   background: var(--mg-surface);
   border-bottom: 1px solid var(--mg-border);
-  font-size: 13px;
+  font-size: 14px;
   user-select: none;
   flex-shrink: 0;
 }
 
-#header .brand { font-weight: 600; letter-spacing: 0.3px; }
+#header .brand { font-weight: 600; }
 #header .sep { color: var(--mg-border); }
-#header #project-dir { color: var(--mg-text-muted); font-family: var(--mg-mono); font-size: 12px; }
+#header #project-dir { color: var(--mg-text); font-size: 14px; font-weight: 400; }
 #header #status { color: var(--mg-text-muted); margin-left: auto; }
 
 #theme-toggle {
@@ -119,8 +121,8 @@ body { display: flex; flex-direction: column; }
   align-items: center;
   gap: 6px;
   padding: 3px 16px;
-  font-size: 12px;
-  font-family: var(--mg-mono);
+  font-size: 14px;
+  font-family: inherit;
   color: var(--mg-text);
   cursor: pointer;
   text-decoration: none;
@@ -136,7 +138,7 @@ body { display: flex; flex-direction: column; }
 
 #file-count {
   background: none; border: none; cursor: pointer;
-  color: var(--mg-text-muted); font-size: 13px; font-family: inherit; padding: 0;
+  color: var(--mg-text); font-size: 14px; font-family: inherit; padding: 0;
 }
 
 #file-count:hover { color: var(--mg-text); text-decoration: underline; }
@@ -400,7 +402,7 @@ body { display: flex; flex-direction: column; }
 
 .chat-message { padding: 3px 0; line-height: 1.3; font-size: 13px; }
 .chat-you > strong { color: var(--mg-comment-user); }
-.chat-claude > strong { color: var(--mg-comment-assistant); }
+.chat-assistant > strong { color: var(--mg-comment-assistant); }
 
 /* --- Buttons --- */
 

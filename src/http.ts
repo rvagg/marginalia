@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { WebSocketServer, type WebSocket } from 'ws'
 import type { Server as McpServer } from '@modelcontextprotocol/sdk/server/index.js'
-import { deliver } from './mcp.js'
+import { CommentMailbox } from './comments.js'
 
 const MIME_TYPES: Record<string, string> = {
   '.html': 'text/html; charset=utf-8',
@@ -12,17 +12,13 @@ const MIME_TYPES: Record<string, string> = {
   '.json': 'application/json; charset=utf-8'
 }
 
-export interface PendingComment {
-  content: string
-  meta: Record<string, string>
-}
 
 export interface WebState {
   clients: Set<WebSocket>
   lastDiff: string
   projectDir: string
   seq: number
-  pendingComments: PendingComment[]
+  mailbox: CommentMailbox
 }
 
 async function serveStatic(res: ServerResponse, filePath: string): Promise<void> {
@@ -60,18 +56,8 @@ function handleHttpRequest(uiDir: string, state: WebState) {
     }
 
     if (url.pathname === '/api/pending-comments') {
-      const comments = state.pendingComments.splice(0)
-      if (comments.length === 0) {
-        res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' })
-        res.end('')
-        return
-      }
-      const formatted = comments.map(c => {
-        const attrs = Object.entries(c.meta).map(([k, v]) => `${k}="${v}"`).join(' ')
-        return `<channel source="marginalia" ${attrs}>\n${c.content}\n</channel>`
-      }).join('\n\n')
       res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' })
-      res.end(formatted)
+      res.end(state.mailbox.drain())
       return
     }
 
@@ -80,7 +66,14 @@ function handleHttpRequest(uiDir: string, state: WebState) {
   }
 }
 
-function handleWebSocketMessage(ws: WebSocket, state: WebState, mcp: McpServer, raw: Buffer) {
+
+function handleWebSocketMessage(
+  ws: WebSocket,
+  state: WebState,
+  mcp: McpServer,
+  publishComment: (content: string, meta: Record<string, string>) => void,
+  raw: Buffer
+) {
   let msg: Record<string, unknown>
   try {
     msg = JSON.parse(raw.toString())
@@ -101,22 +94,19 @@ function handleWebSocketMessage(ws: WebSocket, state: WebState, mcp: McpServer, 
         meta.line = String(msg.line)
         meta.side = String(msg.side)
       }
-      deliver(mcp, String(msg.text), meta)
-      state.pendingComments.push({ content: String(msg.text), meta })
+      publishComment(String(msg.text), meta)
       ws.send(JSON.stringify({ ...msg, type: 'comment_ack', thread_id: threadId }))
       break
     }
     case 'thread_reply': {
       const meta = { type: 'thread_reply', thread_id: String(msg.thread_id) }
-      deliver(mcp, String(msg.text), meta)
-      state.pendingComments.push({ content: String(msg.text), meta })
+      publishComment(String(msg.text), meta)
       break
     }
     case 'general': {
       const threadId = `t_${++state.seq}`
       const meta: Record<string, string> = { type: 'general', thread_id: threadId }
-      deliver(mcp, String(msg.text), meta)
-      state.pendingComments.push({ content: String(msg.text), meta })
+      publishComment(String(msg.text), meta)
       ws.send(JSON.stringify({ ...msg, type: 'comment_ack', thread_id: threadId }))
       break
     }
@@ -133,17 +123,34 @@ function handleWebSocketMessage(ws: WebSocket, state: WebState, mcp: McpServer, 
   }
 }
 
-function handleWebSocketConnection(ws: WebSocket, state: WebState, mcp: McpServer) {
+export function getAgentDisplayName(clientName: string | undefined): string {
+  const trimmed = clientName?.trim()
+  if (!trimmed) return 'agent'
+  return trimmed.toLowerCase().includes('claude') ? 'claude' : trimmed.slice(0, 48)
+}
+
+function handleWebSocketConnection(
+  ws: WebSocket,
+  state: WebState,
+  mcp: McpServer,
+  publishComment: (content: string, meta: Record<string, string>) => void
+) {
   state.clients.add(ws)
-  ws.send(JSON.stringify({ type: 'init', diff: state.lastDiff, projectDir: state.projectDir }))
-  ws.on('message', (raw: Buffer) => handleWebSocketMessage(ws, state, mcp, raw))
+  const agentName = getAgentDisplayName(mcp.getClientVersion()?.name)
+  ws.send(JSON.stringify({ type: 'init', diff: state.lastDiff, projectDir: state.projectDir, agentName }))
+  ws.on('message', (raw: Buffer) => handleWebSocketMessage(ws, state, mcp, publishComment, raw))
   ws.on('close', () => { state.clients.delete(ws) })
 }
 
-export function createHttpServer(uiDir: string, state: WebState, mcp: McpServer) {
+export function createHttpServer(
+  uiDir: string,
+  state: WebState,
+  mcp: McpServer,
+  publishComment: (content: string, meta: Record<string, string>) => void
+) {
   const httpServer = createServer(handleHttpRequest(uiDir, state))
   const wss = new WebSocketServer({ server: httpServer })
-  wss.on('connection', (ws: WebSocket) => handleWebSocketConnection(ws, state, mcp))
+  wss.on('connection', (ws: WebSocket) => handleWebSocketConnection(ws, state, mcp, publishComment))
   // Swallow WSS errors that propagate from the underlying HTTP server
   // (e.g. EADDRINUSE during listen). The HTTP server's own error handler
   // is responsible for the actual error flow; we just need WSS to not

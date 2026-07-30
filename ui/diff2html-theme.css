@@ -72,6 +72,7 @@
 .d2h-code-line { padding: 0 !important; width: calc(100% - 32px) !important; }
 .d2h-code-line-prefix { padding: 0 4px 0 16px !important; vertical-align: top !important; }
 .d2h-code-line-ctn { font-family: var(--mg-mono) !important; font-size: 12px !important; padding: 1px 4px 1px 2px !important; white-space: pre-wrap !important; word-wrap: break-word !important; overflow-wrap: break-word !important; }
+[data-theme="light"] .d2h-code-line-ctn { color: var(--mg-text) !important; }
 
 /* --- Row colours: GitHub-matching del/ins/info --- */
 
@@ -104,7 +105,7 @@
 /* Hunk headers */
 .d2h-info { background: #ddf4ff !important; }
 .d2h-info .d2h-code-linenumber { background: #ddf4ff !important; }
-.d2h-info .d2h-code-line, .d2h-info .d2h-code-line-ctn { background: #ddf4ff !important; color: rgba(31, 35, 40, 0.7) !important; }
+.d2h-info .d2h-code-line, .d2h-info .d2h-code-line-ctn { background: #ddf4ff !important; color: var(--mg-diff-hunk-text) !important; }
 
 /* --- Tags --- */
 
