@@ -2,6 +2,10 @@
   "name": "@rvagg/marginalia",
   "version": "0.0.9",
   "description": "Live browser code review for coding agents, with inline comments and threaded replies",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/rvagg/marginalia.git"
+  },
   "type": "module",
   "bin": {
     "marginalia": "./dist/server.js"
