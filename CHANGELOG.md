@@ -1,3 +1,9 @@
+## [0.0.8](https://github.com/rvagg/marginalia/compare/v0.0.7...v0.0.8) (2026-07-30)
+
+### Trivial Changes
+
+* **deps:** bump @hono/node-server from 1.19.11 to 2.0.12 ([#8](https://github.com/rvagg/marginalia/issues/8)) ([ff64313](https://github.com/rvagg/marginalia/commit/ff643130b324fabfb4b1080af10d8d34c7d6d734))
+
 ## [0.0.7](https://github.com/rvagg/marginalia/compare/v0.0.6...v0.0.7) (2026-07-30)
 
 ### Trivial Changes
