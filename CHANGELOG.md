@@ -1,3 +1,9 @@
+## [0.0.6](https://github.com/rvagg/marginalia/compare/v0.0.5...v0.0.6) (2026-07-30)
+
+### Trivial Changes
+
+* **deps-dev:** bump @semantic-release/changelog from 6.0.3 to 7.0.0 ([#6](https://github.com/rvagg/marginalia/issues/6)) ([8b53cd3](https://github.com/rvagg/marginalia/commit/8b53cd39a00c3f920d39f0c5e654659a2e2e3382))
+
 ## [0.0.5](https://github.com/rvagg/marginalia/compare/v0.0.4...v0.0.5) (2026-07-30)
 
 ### Trivial Changes
