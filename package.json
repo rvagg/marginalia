@@ -1,15 +1,19 @@
 {
   "name": "@rvagg/marginalia",
   "version": "0.0.1",
-  "description": "Live code review UI for Claude Code, annotate diffs, converse with your AI agent",
+  "description": "Live browser code review for coding agents, with inline comments and threaded replies",
   "type": "module",
   "bin": {
     "marginalia": "./dist/server.js"
   },
   "files": [
     "dist",
-    "ui"
+    "ui",
+    "marginalia.png"
   ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "start": "node dist/server.js",
     "build": "tsc",
@@ -22,12 +26,125 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@semantic-release/changelog": "^6.0.3",
+    "@semantic-release/commit-analyzer": "^13.0.1",
+    "@semantic-release/git": "^10.0.1",
+    "@semantic-release/github": "^12.0.0",
+    "@semantic-release/npm": "^13.1.1",
+    "@semantic-release/release-notes-generator": "^14.0.3",
     "@types/node": "^26.1.1",
     "@types/ws": "^8.18.1",
+    "conventional-changelog-conventionalcommits": "^9.3.1",
+    "semantic-release": "^25.0.1",
     "typescript": "^7.0.2"
   },
   "engines": {
     "node": ">=24"
+  },
+  "release": {
+    "branches": [
+      "master"
+    ],
+    "plugins": [
+      [
+        "@semantic-release/commit-analyzer",
+        {
+          "preset": "conventionalcommits",
+          "releaseRules": [
+            {
+              "breaking": true,
+              "release": "major"
+            },
+            {
+              "revert": true,
+              "release": "patch"
+            },
+            {
+              "type": "feat",
+              "release": "minor"
+            },
+            {
+              "type": "fix",
+              "release": "patch"
+            },
+            {
+              "type": "chore",
+              "release": "patch"
+            },
+            {
+              "type": "docs",
+              "release": "patch"
+            },
+            {
+              "type": "test",
+              "release": "patch"
+            },
+            {
+              "scope": "no-release",
+              "release": false
+            }
+          ]
+        }
+      ],
+      [
+        "@semantic-release/release-notes-generator",
+        {
+          "preset": "conventionalcommits",
+          "presetConfig": {
+            "types": [
+              {
+                "type": "feat",
+                "section": "Features"
+              },
+              {
+                "type": "fix",
+                "section": "Bug Fixes"
+              },
+              {
+                "type": "perf",
+                "section": "Performance Improvements"
+              },
+              {
+                "type": "revert",
+                "section": "Reverts"
+              },
+              {
+                "type": "refactor",
+                "section": "Code Refactoring"
+              },
+              {
+                "type": "test",
+                "section": "Tests"
+              },
+              {
+                "type": "build",
+                "section": "Trivial Changes"
+              },
+              {
+                "type": "ci",
+                "section": "Trivial Changes"
+              },
+              {
+                "type": "chore",
+                "section": "Trivial Changes"
+              },
+              {
+                "type": "docs",
+                "section": "Trivial Changes"
+              },
+              {
+                "type": "style",
+                "section": "Trivial Changes"
+              }
+            ]
+          }
+        }
+      ],
+      "@semantic-release/changelog",
+      "@semantic-release/npm",
+      "@semantic-release/github",
+      "@semantic-release/git"
+    ]
   },
   "author": "Rod Vagg <rod@vagg.org>",
   "license": "Apache-2.0"
