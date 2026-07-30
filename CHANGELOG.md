@@ -1,3 +1,9 @@
+## [0.0.7](https://github.com/rvagg/marginalia/compare/v0.0.6...v0.0.7) (2026-07-30)
+
+### Trivial Changes
+
+* **deps:** bump body-parser from 2.2.2 to 2.3.0 ([#7](https://github.com/rvagg/marginalia/issues/7)) ([e1e5f49](https://github.com/rvagg/marginalia/commit/e1e5f4909b6be1e4ec6b8d07fe657ab459633e44))
+
 ## [0.0.6](https://github.com/rvagg/marginalia/compare/v0.0.5...v0.0.6) (2026-07-30)
 
 ### Trivial Changes
