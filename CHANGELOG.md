@@ -1,3 +1,9 @@
+## [0.0.5](https://github.com/rvagg/marginalia/compare/v0.0.4...v0.0.5) (2026-07-30)
+
+### Trivial Changes
+
+* **deps-dev:** bump @semantic-release/git from 10.0.1 to 11.0.1 ([#5](https://github.com/rvagg/marginalia/issues/5)) ([3cf584c](https://github.com/rvagg/marginalia/commit/3cf584cc2ebfb65cce7c2c3b86393d3df35f6097))
+
 ## [0.0.4](https://github.com/rvagg/marginalia/compare/v0.0.3...v0.0.4) (2026-07-30)
 
 ### Trivial Changes
