@@ -1,3 +1,9 @@
+## [0.0.9](https://github.com/rvagg/marginalia/compare/v0.0.8...v0.0.9) (2026-07-30)
+
+### Trivial Changes
+
+* **deps:** bump ip-address and express-rate-limit ([#9](https://github.com/rvagg/marginalia/issues/9)) ([03abef3](https://github.com/rvagg/marginalia/commit/03abef3be6f5faf61923145d4f301e0d24b19854))
+
 ## [0.0.8](https://github.com/rvagg/marginalia/compare/v0.0.7...v0.0.8) (2026-07-30)
 
 ### Trivial Changes
