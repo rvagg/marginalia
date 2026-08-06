@@ -29,9 +29,15 @@ function formatComments(comments: PendingComment[]): string {
 
 export class CommentMailbox {
   #comments: PendingComment[] = []
+  #nextMessageId = 0
 
-  add(comment: PendingComment): void {
-    this.#comments.push(comment)
+  add(comment: PendingComment): PendingComment {
+    const pending = {
+      content: comment.content,
+      meta: { ...comment.meta, message_id: String(++this.#nextMessageId) }
+    }
+    this.#comments.push(pending)
+    return pending
   }
 
   read(): string {
@@ -44,13 +50,19 @@ export class CommentMailbox {
     return formatComments(comments)
   }
 
-  acknowledgeThread(threadId: string): void {
+  acknowledgeThrough(threadId: string, messageId: number): void {
     let writeIndex = 0
     for (const comment of this.#comments) {
-      if (comment.meta.thread_id !== threadId) {
+      const acknowledged = comment.meta.thread_id === threadId &&
+        Number(comment.meta.message_id) <= messageId
+      if (!acknowledged) {
         this.#comments[writeIndex++] = comment
       }
     }
     this.#comments.length = writeIndex
+  }
+
+  clear(): void {
+    this.#comments.length = 0
   }
 }

@@ -35,6 +35,7 @@ const StartArgs = z.object({
 
 const ReplyArgs = z.object({
   thread_id: z.string(),
+  message_id: z.number().int().positive(),
   text: z.string().optional(),
   body: z.string().optional(),
   ephemeral: z.boolean().optional()
@@ -43,6 +44,7 @@ const ReplyArgs = z.object({
   { message: 'reply requires "text" (or "body") parameter' }
 ).transform(d => ({
   thread_id: d.thread_id,
+  message_id: d.message_id,
   text: (d.text ?? d.body)!,
   ephemeral: d.ephemeral ?? false
 }))
@@ -85,9 +87,9 @@ export function createMcpServer(opts: McpOptions) {
         `When notified that ${COMMENTS_RESOURCE_URI} changed, read mcp://${COMMENTS_RESOURCE_URI} to receive the pending comments.`,
         'IMPORTANT: Only use the reply tool when responding to <channel source="marginalia"> messages.',
         'If a message does NOT come from a <channel> tag, respond normally in the terminal.',
-        'When you get a marginalia channel message, respond ONLY via the reply tool with the matching thread_id. Do not duplicate your response in the terminal.',
-        'Replies support markdown.',
-        'Before taking action on a review comment, send an ephemeral reply (ephemeral:true) so the user sees you are working on it. Then send the real reply when done.',
+        'When you get a marginalia channel message, respond ONLY via the reply tool with its thread_id and message_id. Do not duplicate your response in the terminal.',
+        'Replies support markdown. Every reply acknowledges delivered comments in that thread through message_id.',
+        'Before taking action on a review comment, send an ephemeral reply so the user sees you are working on it while the thread remains active. Then send the final reply with the same message_id.',
         'When you edit files in response to review feedback, the reviewer sees changes automatically in the live diff view. Describe what you changed in your reply.',
         'If channels are not available, the user may ask you to poll for comments or set up a loop. Use poll_comments to check for pending comments from the UI.'
       ].join(' ')
@@ -151,15 +153,16 @@ export function createMcpServer(opts: McpOptions) {
       },
       {
         name: 'reply',
-        description: 'Reply to a review comment thread in the marginalia UI. Supports markdown. Set ephemeral:true for a temporary status message that gets replaced by the next non-ephemeral reply.',
+        description: 'Reply to a review comment thread and acknowledge delivered comments through message_id. Supports markdown. Set ephemeral:true for a temporary status message that gets replaced by the next reply.',
         inputSchema: {
           type: 'object' as const,
           properties: {
-            thread_id: { type: 'string', description: 'The thread_id from the original comment' },
+            thread_id: { type: 'string', description: 'The thread_id from the comment' },
+            message_id: { type: 'number', description: 'The latest message_id being answered in this thread' },
             text: { type: 'string', description: 'Your response text (supports markdown)' },
             ephemeral: { type: 'boolean', description: 'If true, this is a temporary status that gets replaced by the next reply' }
           },
-          required: ['thread_id', 'text']
+          required: ['thread_id', 'message_id', 'text']
         }
       },
       {
@@ -220,10 +223,10 @@ export function createMcpServer(opts: McpOptions) {
         }
         const parsed = parseArgs(ReplyArgs, req.params.arguments)
         if (!parsed.ok) return { content: [{ type: 'text', text: `error: ${parsed.error}` }] }
-        const { thread_id, text, ephemeral } = parsed.data
+        const { thread_id, message_id, text, ephemeral } = parsed.data
         broadcast({ type: 'reply', thread_id, text, ephemeral })
-        if (!ephemeral) mailbox.acknowledgeThread(thread_id)
-        return { content: [{ type: 'text', text: `replied to ${thread_id}${ephemeral ? ' (ephemeral)' : ''}` }] }
+        mailbox.acknowledgeThrough(thread_id, message_id)
+        return { content: [{ type: 'text', text: `replied to ${thread_id} through message ${message_id}${ephemeral ? ' (ephemeral)' : ''}` }] }
       }
       case 'get_url': {
         if (!isRunning()) {
@@ -282,9 +285,9 @@ export function createMcpServer(opts: McpOptions) {
   return {
     server: mcp,
     publishComment(content: string, meta: Record<string, string>): void {
-      mailbox.add({ content, meta })
+      const comment = mailbox.add({ content, meta })
       if (!commentsSubscribed) {
-        deliver(mcp, content, meta)
+        deliver(mcp, comment.content, comment.meta)
         return
       }
       void mcp.sendResourceUpdated({ uri: COMMENTS_RESOURCE_URI }).catch(err => {

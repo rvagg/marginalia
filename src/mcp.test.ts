@@ -15,7 +15,7 @@ const ChannelNotificationSchema = z.object({
   })
 })
 
-test('comments resource notifies subscribers and remains pending until a final reply', async () => {
+test('comments resource notifies subscribers and replies acknowledge delivery', async () => {
   const mailbox = new CommentMailbox()
   const broadcasts: Array<Record<string, unknown>> = []
   const { server, publishComment } = createMcpServer({
@@ -57,16 +57,17 @@ test('comments resource notifies subscribers and remains pending until a final r
     const firstContent = firstRead.contents[0]
     assert.ok(firstContent && 'text' in firstContent)
     assert.match(firstContent.text, /Please review this\./)
+    assert.match(firstContent.text, /message_id="1"/)
 
     await client.callTool({
       name: 'reply',
-      arguments: { thread_id: 't_1', text: 'Looking into this.', ephemeral: true }
+      arguments: { thread_id: 't_1', message_id: 1, text: 'Looking into this.', ephemeral: true }
     })
-    assert.match(mailbox.read(), /Please review this\./)
+    assert.equal(mailbox.read(), '')
 
     await client.callTool({
       name: 'reply',
-      arguments: { thread_id: 't_1', text: 'Done.' }
+      arguments: { thread_id: 't_1', message_id: 1, text: 'Done.' }
     })
     assert.equal(mailbox.read(), '')
     assert.deepEqual(broadcasts, [
@@ -93,15 +94,20 @@ test('poll_comments remains a draining fallback', async () => {
   })
   const client = new Client({ name: 'marginalia-test', version: '1.0.0' })
   const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair()
-  let resolveChannel!: (content: string) => void
-  const channel = new Promise<string>(resolve => { resolveChannel = resolve })
+  let resolveChannel!: (params: z.infer<typeof ChannelNotificationSchema>['params']) => void
+  const channel = new Promise<z.infer<typeof ChannelNotificationSchema>['params']>(
+    resolve => { resolveChannel = resolve }
+  )
   client.setNotificationHandler(ChannelNotificationSchema, ({ params }) => {
-    resolveChannel(params.content)
+    resolveChannel(params)
   })
   await server.connect(serverTransport)
   await client.connect(clientTransport)
   publishComment('Fallback comment', { type: 'general', thread_id: 't_1' })
-  assert.equal(await channel, 'Fallback comment')
+  assert.deepEqual(await channel, {
+    content: 'Fallback comment',
+    meta: { type: 'general', thread_id: 't_1', message_id: '1' }
+  })
 
   try {
     const first = CallToolResultSchema.parse(await client.callTool({ name: 'poll_comments', arguments: {} }))

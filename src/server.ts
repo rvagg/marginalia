@@ -81,8 +81,10 @@ export async function startServer(opts: { dir?: string; port?: number; host?: st
   const port = opts.port ?? DEFAULT_PORT
   const host = opts.host ?? DEFAULT_HOST
 
+  const lastDiff = await getCurrentDiff(dir)
+  state.mailbox.clear()
   state.projectDir = dir
-  state.lastDiff = await getCurrentDiff(dir)
+  state.lastDiff = lastDiff
 
   const result = await tryListen(port, host, 1)
   httpServer = result.server
