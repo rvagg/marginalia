@@ -1,3 +1,9 @@
+## [0.0.11](https://github.com/rvagg/marginalia/compare/v0.0.10...v0.0.11) (2026-08-06)
+
+### Bug Fixes
+
+* **mcp:** acknowledge comments by message ID ([#16](https://github.com/rvagg/marginalia/issues/16)) ([13271d2](https://github.com/rvagg/marginalia/commit/13271d2590d71fa40e606fe0b33fb5801bfee2a2))
+
 ## [0.0.10](https://github.com/rvagg/marginalia/compare/v0.0.9...v0.0.10) (2026-07-30)
 
 ### Trivial Changes
