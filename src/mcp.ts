@@ -35,7 +35,7 @@ const StartArgs = z.object({
 
 const ReplyArgs = z.object({
   thread_id: z.string(),
-  message_id: z.number().int().positive(),
+  message_id: z.string().regex(/^[1-9]\d*$/),
   text: z.string().optional(),
   body: z.string().optional(),
   ephemeral: z.boolean().optional()
@@ -44,7 +44,7 @@ const ReplyArgs = z.object({
   { message: 'reply requires "text" (or "body") parameter' }
 ).transform(d => ({
   thread_id: d.thread_id,
-  message_id: d.message_id,
+  message_id: Number(d.message_id),
   text: (d.text ?? d.body)!,
   ephemeral: d.ephemeral ?? false
 }))
@@ -158,7 +158,7 @@ export function createMcpServer(opts: McpOptions) {
           type: 'object' as const,
           properties: {
             thread_id: { type: 'string', description: 'The thread_id from the comment' },
-            message_id: { type: 'number', description: 'The latest message_id being answered in this thread' },
+            message_id: { type: 'string', pattern: '^[1-9]\\d*$', description: 'The latest message_id being answered in this thread' },
             text: { type: 'string', description: 'Your response text (supports markdown)' },
             ephemeral: { type: 'boolean', description: 'If true, this is a temporary status that gets replaced by the next reply' }
           },

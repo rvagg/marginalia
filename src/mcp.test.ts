@@ -61,13 +61,13 @@ test('comments resource notifies subscribers and replies acknowledge delivery', 
 
     await client.callTool({
       name: 'reply',
-      arguments: { thread_id: 't_1', message_id: 1, text: 'Looking into this.', ephemeral: true }
+      arguments: { thread_id: 't_1', message_id: '1', text: 'Looking into this.', ephemeral: true }
     })
     assert.equal(mailbox.read(), '')
 
     await client.callTool({
       name: 'reply',
-      arguments: { thread_id: 't_1', message_id: 1, text: 'Done.' }
+      arguments: { thread_id: 't_1', message_id: '1', text: 'Done.' }
     })
     assert.equal(mailbox.read(), '')
     assert.deepEqual(broadcasts, [
