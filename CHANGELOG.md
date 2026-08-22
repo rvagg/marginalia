@@ -1,3 +1,9 @@
+## [0.0.12](https://github.com/rvagg/marginalia/compare/v0.0.11...v0.0.12) (2026-08-22)
+
+### Bug Fixes
+
+* **mcp:** exit when parent stdio disconnects ([32e46c8](https://github.com/rvagg/marginalia/commit/32e46c849b4be8267d778c2090865e0959b2f077))
+
 ## [0.0.11](https://github.com/rvagg/marginalia/compare/v0.0.10...v0.0.11) (2026-08-06)
 
 ### Bug Fixes
