@@ -12,6 +12,7 @@ import { getCurrentDiff } from './diff.js'
 import { createDiffPoller, type DiffPoller } from './poller.js'
 import type { WebState } from './http.js'
 import { CommentMailbox } from './comments.js'
+import { watchParentDisconnect } from './lifecycle.js'
 
 const ROOT_DIR = join(fileURLToPath(new URL('.', import.meta.url)), '..')
 const { version } = JSON.parse(readFileSync(join(ROOT_DIR, 'package.json'), 'utf-8'))
@@ -139,20 +140,15 @@ const { server: mcp, publishComment } = createMcpServer({
 
 // Start
 
-// When the parent (Claude Code) dies, stdin closes. The stdio transport
-// otherwise busy-loops on EOF, orphaning a process that spins at 100% CPU.
-// Exit cleanly on stdin end/close.
-function exitOnStdinClose(): void {
-  const shutdown = () => {
+function exitOnParentDisconnect(): void {
+  watchParentDisconnect(process.stdin, process.stdout, process.stderr, () => {
     void stopServer().finally(() => process.exit(0))
-  }
-  process.stdin.on('end', shutdown)
-  process.stdin.on('close', shutdown)
+  })
 }
 
 async function main(): Promise<void> {
+  exitOnParentDisconnect()
   await mcp.connect(new StdioServerTransport())
-  exitOnStdinClose()
 
   if (AUTO_START) {
     try {
